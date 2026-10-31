@@ -32,6 +32,12 @@ it('pesan memuat nama, nomor order, dan link lacak', () => {
   expect(text).toContain('https://x.test/lacak/abc')
 })
 
+it('menyebut sisa tagihan, bukan total, bila ada', () => {
+  const ctx = { customerName: 'Sari', orderNo: 'KMG-1', outletName: 'Outlet', trackingUrl: 'https://x.test/lacak/abc' }
+  expect(buildWaMessage('READY', { ...ctx, amountDue: 26000 })).toContain('Sisa tagihan Rp26.000')
+  expect(buildWaMessage('READY', ctx)).not.toContain('tagihan Rp')
+})
+
 it('memetakan status ke event WhatsApp', () => {
   expect(waEventForStatus('RECEIVED')).toBe('ORDER_RECEIVED')
   expect(waEventForStatus('IN_WASHING')).toBe('IN_PROCESS')

@@ -67,7 +67,7 @@ export function ReasonDialog({
         <Field label={label} htmlFor="reason" required hint="Wajib diisi. Tercatat di riwayat dan audit log.">
           <Textarea
             id="reason"
-            autoFocus
+            data-autofocus
             value={reason}
             placeholder={placeholder}
             onChange={(e) => setReason(e.target.value)}

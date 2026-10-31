@@ -6,7 +6,8 @@ export type WaContext = {
   orderNo: string
   outletName: string
   trackingUrl: string
-  total?: number
+  /** Sisa tagihan; disebut di pesan bila lebih dari nol. */
+  amountDue?: number
 }
 
 export const WA_EVENT_LABEL: Record<WaEvent, string> = {
@@ -48,7 +49,7 @@ export function waEventForStatus(status: OrderStatus): WaEvent | null {
 
 export function buildWaMessage(event: WaEvent, ctx: WaContext): string {
   const { customerName: name, orderNo, outletName: outlet, trackingUrl: url } = ctx
-  const total = ctx.total === undefined ? '' : ` Total ${formatRupiah(ctx.total)}.`
+  const total = ctx.amountDue ? ` Sisa tagihan ${formatRupiah(ctx.amountDue)}.` : ''
   switch (event) {
     case 'ORDER_RECEIVED':
       return `Halo ${name}, order laundry Anda ${orderNo} sudah kami terima di ${outlet}.${total} Pantau status cucian Anda di sini: ${url}\n\nTerima kasih.`

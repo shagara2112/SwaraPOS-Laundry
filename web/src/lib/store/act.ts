@@ -1,0 +1,23 @@
+import { toast } from '@/components/ui/toast'
+import { useDemo } from './demo-store'
+import type { ActionError, ActionResult, DemoState } from './state'
+
+export const ERROR_MESSAGE: Record<ActionError, string> = {
+  NOT_FOUND: 'Data tidak ditemukan. Coba muat ulang halaman.',
+  NOT_ALLOWED: 'Aksi ini tidak bisa dilakukan pada kondisi sekarang.',
+  QC_REQUIRED: 'QC harus lulus sebelum order bisa siap.',
+  REASON_REQUIRED: 'Alasan atau catatan wajib diisi.',
+  INVALID_TYPE: 'Format file harus JPG, PNG, atau PDF.',
+  TOO_LARGE: 'Ukuran file harus di bawah 2 MB.',
+}
+
+/** Jalankan reducer lewat store, lalu tampilkan toast sukses atau pesan error. */
+export function act<T>(fn: (s: DemoState) => ActionResult<T>, success?: string): ActionResult<T> {
+  const result = useDemo.getState().run(fn)
+  if (result.ok) {
+    if (success) toast(success)
+  } else {
+    toast(ERROR_MESSAGE[result.error], 'error')
+  }
+  return result
+}

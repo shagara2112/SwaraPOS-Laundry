@@ -9,7 +9,11 @@ function useModal(open: boolean) {
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      dialog.showModal()
+      // showModal() memfokuskan elemen pertama (tombol tutup); arahkan ke field yang ditandai.
+      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+    }
     if (!open && dialog.open) dialog.close()
   }, [open])
   return ref
