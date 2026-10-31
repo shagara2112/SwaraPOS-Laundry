@@ -1,13 +1,10 @@
-const jakartaParts = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Jakarta',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
+// WIB tetap UTC+7 tanpa musim panas; offset tetap menghindari format tanggal Intl yang
+// berbeda antar data locale perangkat (Hermes di Android memakai ICU perangkat).
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000
 
 /** Tanggal kalender di Asia/Jakarta dalam bentuk `YYYY-MM-DD`. */
 export function jakartaDateKey(date: Date): string {
-  return jakartaParts.format(date)
+  return new Date(date.getTime() + WIB_OFFSET_MS).toISOString().slice(0, 10)
 }
 
 /** Nomor order unik per outlet per hari, contoh `KMG-261101-0007`. */

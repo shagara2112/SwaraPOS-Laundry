@@ -1,6 +1,7 @@
 import { ROLE_HOME, type Role } from '@swarapos/core/permissions'
+import { resolveStaff } from '@swarapos/core/selectors'
 import { router, type Href } from 'expo-router'
-import { Bike, Crown, ScanLine, ShieldCheck, Store, WashingMachine, type LucideIcon } from 'lucide-react-native'
+import { Bike, Crown, ScanLine, ShieldCheck, Store, UserRound, WashingMachine, type LucideIcon } from 'lucide-react-native'
 import { useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -19,15 +20,21 @@ const ROLES: { role: Role; label: string; desc: string; icon: LucideIcon }[] = [
 
 export default function MasukScreen() {
   const outlets = useDemo((s) => s.outlets)
+  const staff = useDemo((s) => s.staff)
   const savedOutlet = useSession((s) => s.outletId)
+  const savedStaff = useSession((s) => s.staffId)
   const signIn = useSession((s) => s.signIn)
   const [role, setRole] = useState<Role>('CASHIER')
   const [outletId, setOutletId] = useState(savedOutlet ?? outlets[0]?.id)
+  const [staffId, setStaffId] = useState<string | null>(savedStaff)
   const selected = ROLES.find((r) => r.role === role)!
+  // Peran dengan beberapa orang di outlet (mis. dua kurir) memilih orangnya; tugas kurir mengikuti staf ini.
+  const people = staff.filter((x) => x.role === role && x.outletId === outletId)
+  const person = outletId ? resolveStaff(staff, { role, outletId, staffId }) : undefined
 
   const masuk = () => {
     if (!outletId) return
-    signIn(role, outletId)
+    signIn(role, outletId, person?.id)
     router.replace(ROLE_HOME[role] as Href)
   }
 
@@ -89,6 +96,31 @@ export default function MasukScreen() {
             )
           })}
         </View>
+
+        {people.length > 1 && (
+          <>
+            <Text style={styles.label}>Masuk sebagai</Text>
+            <View style={styles.list}>
+              {people.map((p) => {
+                const active = p.id === person?.id
+                return (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => setStaffId(p.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    style={[styles.outlet, active && styles.outletActive]}
+                  >
+                    <UserRound size={18} color={active ? color.primary : color.subtle} />
+                    <Text style={[styles.outletText, active && styles.outletTextActive]} numberOfLines={1}>
+                      {p.name}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>

@@ -1,3 +1,4 @@
+import { resolveStaff } from '@swarapos/core/selectors'
 import type { Actor } from '@swarapos/core/types'
 import { useMemo } from 'react'
 import { useDemo } from './demo-store'
@@ -22,15 +23,13 @@ export function useCustomerMap() {
   return useMemo(() => new Map(customers.map((c) => [c.id, c])), [customers])
 }
 
-/** Staf yang sedang memakai aplikasi: staf pertama dengan peran & outlet sesi (prototipe tanpa login). */
+/** Staf yang sedang memakai aplikasi: pilihan di layar Masuk, atau staf pertama peran itu di outlet (prototipe tanpa login). */
 export function useCurrentStaff() {
   const staff = useDemo((s) => s.staff)
   const role = useSession((s) => s.role)
   const outletId = useSession((s) => s.outletId)
-  return useMemo(
-    () => staff.find((x) => x.role === role && x.outletId === outletId) ?? staff.find((x) => x.role === role),
-    [staff, role, outletId],
-  )
+  const staffId = useSession((s) => s.staffId)
+  return useMemo(() => (role && outletId ? resolveStaff(staff, { role, outletId, staffId }) : undefined), [staff, role, outletId, staffId])
 }
 
 /** Petugas yang tercatat di riwayat order dan audit log untuk aksi dari aplikasi. */

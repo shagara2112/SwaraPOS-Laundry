@@ -7,7 +7,9 @@ import { useDemo } from './demo-store'
 type Session = {
   role: Role | null
   outletId: string | null
-  signIn: (role: Role, outletId: string) => void
+  /** Staf yang dipilih bila satu peran punya beberapa orang di outlet (mis. dua kurir). */
+  staffId: string | null
+  signIn: (role: Role, outletId: string, staffId?: string) => void
   signOut: () => void
 }
 
@@ -17,9 +19,10 @@ export const useSession = create<Session>()(
     (set) => ({
       role: null,
       outletId: null,
-      signIn: (role, outletId) => {
+      staffId: null,
+      signIn: (role, outletId, staffId) => {
         useDemo.setState({ activeOutletId: outletId })
-        set({ role, outletId })
+        set({ role, outletId, staffId: staffId ?? null })
       },
       signOut: () => set({ role: null }),
     }),
@@ -27,7 +30,7 @@ export const useSession = create<Session>()(
       name: 'swarapos-session',
       skipHydration: true,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (s) => ({ role: s.role, outletId: s.outletId }),
+      partialize: (s) => ({ role: s.role, outletId: s.outletId, staffId: s.staffId }),
     },
   ),
 )

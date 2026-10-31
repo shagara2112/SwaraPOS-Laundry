@@ -24,9 +24,11 @@ export function SignaturePad({ onChange }: { onChange: (signed: boolean) => void
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponderCapture={() => true}
         onResponderTerminationRequest={() => false}
+        // Grant harus mengembalikan true: RN baru memblokir responder native (ScrollView lembar) bila nilainya tepat true.
         onResponderGrant={(e) => {
           const p = pointOf(e)
           setStrokes((s) => [...s, [p]])
+          return true
         }}
         onResponderMove={(e) => {
           const p = pointOf(e)
@@ -43,9 +45,11 @@ export function SignaturePad({ onChange }: { onChange: (signed: boolean) => void
             ))}
         </Svg>
         {!signed && (
-          <Text style={styles.placeholder} selectable={false}>
-            Tanda tangan di sini
-          </Text>
+          <View style={styles.placeholderWrap} pointerEvents="none">
+            <Text style={styles.placeholder} selectable={false}>
+              Tanda tangan di sini
+            </Text>
+          </View>
         )}
       </View>
       <Button
@@ -64,5 +68,6 @@ export function SignaturePad({ onChange }: { onChange: (signed: boolean) => void
 
 const styles = StyleSheet.create({
   pad: { height: 160, borderRadius: radius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: color.borderStrong, backgroundColor: color.white, alignItems: 'center', justifyContent: 'center' },
+  placeholderWrap: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   placeholder: { fontFamily: font.regular, fontSize: 13, color: color.subtle },
 })

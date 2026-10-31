@@ -31,11 +31,11 @@ Di browser untuk pengecekan cepat (tanpa kamera): `npm run web`.
 | `npm run typecheck` | Pemeriksaan tipe TypeScript |
 | `npm run lint` | ESLint (`expo lint`) |
 
-Tes logika bisnis ada di paket core: `npm --prefix ../packages/core test`.
+Tes logika bisnis ada di paket core. Jalankan `npm install` sekali di root repo, lalu `npm --prefix ../packages/core test`.
 
 ## Mode demo
 
-- Layar **Masuk** memilih peran dan outlet; tidak ada kata sandi. Ganti peran lewat tab **Akun → Ganti peran**.
+- Layar **Masuk** memilih peran dan outlet; bila satu peran punya beberapa orang di outlet (mis. dua kurir), pilih orangnya. Tidak ada kata sandi. Ganti peran lewat tab **Akun → Ganti peran**.
 - **Akun → Reset data demo** mengembalikan data contoh ke awal.
 - Data tersimpan di perangkat (AsyncStorage), terpisah dari data demo di web.
 - Tombol WhatsApp membuka WhatsApp dengan pesan terisi; staf menekan kirim sendiri, lalu menandai terkirim di aplikasi.
@@ -46,7 +46,7 @@ Tes logika bisnis ada di paket core: `npm --prefix ../packages/core test`.
 1. **Kasir** → order dijemput + diantar → simpan → label QR tampil.
 2. **Owner** → Antar-jemput → tugaskan kurir untuk jemput.
 3. **Kurir** → tugas jemput → terima → berangkat → tiba → foto/tanda tangan + nama → selesai.
-4. **Operator** → Scan label (atau ketik nomor order) → terima di outlet → majukan sampai QC.
+4. **Operator** → Scan label, atau ketuk kartunya di tahap **Dijemput** → terima di outlet → majukan sampai QC.
 5. **QC** → checklist → Lulus → order terbaca "Siap diantar".
 6. **Kasir** → detail order → Kirim WhatsApp → tandai terkirim → catat bayar.
 7. **Kasir/Owner** → detail order → buat tugas antar → tugaskan kurir → **Kurir** catat COD bila ada sisa, lalu selesai dengan bukti.

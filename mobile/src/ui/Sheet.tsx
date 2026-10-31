@@ -1,6 +1,6 @@
 import { X } from 'lucide-react-native'
 import { useState, type ReactNode } from 'react'
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { color, font, radius, space } from '@/theme'
 import { Button, type ButtonVariant } from './Button'
@@ -25,7 +25,8 @@ export function Sheet({
   const insets = useSafeAreaInsets()
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.wrap}>
+      {/* Dialog Modal Android edge-to-edge tidak di-resize oleh keyboard, jadi padding dipakai di kedua platform. */}
+      <KeyboardAvoidingView behavior="padding" style={styles.wrap}>
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Tutup" />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + space(3) }]}>
           <View style={styles.handle} />

@@ -16,8 +16,12 @@ import { ChipRow, EmptyState } from '@/ui/misc'
 import { Screen } from '@/ui/Screen'
 import { ReasonSheet } from '@/ui/Sheet'
 
+// Order yang sudah dijemput kurir menunggu diterima di outlet; tombol majunya "Ubah ke Diterima outlet".
+const INBOUND: OrderStatus[] = ['PICKED_UP']
+
 const STAGES: { id: string; label: string; statuses: OrderStatus[] }[] = [
-  { id: 'all', label: 'Semua', statuses: [...PRODUCTION_COLUMNS.flatMap((c) => c.statuses), ...HOLD_STATUSES] },
+  { id: 'all', label: 'Semua', statuses: [...INBOUND, ...PRODUCTION_COLUMNS.flatMap((c) => c.statuses), ...HOLD_STATUSES] },
+  { id: 'inbound', label: 'Dijemput', statuses: INBOUND },
   ...PRODUCTION_COLUMNS,
   { id: 'hold', label: 'Ditahan', statuses: HOLD_STATUSES },
 ]
@@ -50,7 +54,7 @@ export function ProductionScreen() {
         contentContainerStyle={{ padding: space(4), paddingBottom: space(10) }}
         ListHeaderComponent={
           <View style={{ marginBottom: space(3) }}>
-            <ChipRow items={counts.filter((c) => c.id !== 'hold' || c.count > 0)} value={stage} onChange={setStage} />
+            <ChipRow items={counts.filter((c) => (c.id !== 'hold' && c.id !== 'inbound') || c.count > 0)} value={stage} onChange={setStage} />
           </View>
         }
         ListEmptyComponent={<EmptyState icon={WashingMachine} title="Tidak ada order di tahap ini" />}

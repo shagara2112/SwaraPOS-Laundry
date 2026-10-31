@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { amountDue, dashboardKpis, isLate, planUsage, resumeTarget, trackingUrl } from './selectors'
+import { amountDue, dashboardKpis, isLate, planUsage, resolveStaff, resumeTarget, trackingUrl } from './selectors'
 import { createSeed } from './store/seed'
 import type { DemoState } from './store/state'
 import type { Order } from './types'
@@ -82,5 +82,20 @@ describe('planUsage', () => {
     const [outlets, staff] = planUsage({ outlets: 1, staff: 5 }, { outlets: 1, staff: 7 })
     expect(outlets).toMatchObject({ reached: true, pct: 100 })
     expect(staff).toMatchObject({ reached: true, pct: 100 })
+  })
+})
+
+describe('resolveStaff', () => {
+  it('memakai staf pilihan sesi bila peran dan outlet cocok', () => {
+    expect(resolveStaff(s0.staff, { role: 'COURIER', outletId: 'o-kmg', staffId: 'st-fajar' })?.id).toBe('st-fajar')
+  })
+
+  it('tanpa pilihan, memakai staf pertama peran itu di outlet', () => {
+    expect(resolveStaff(s0.staff, { role: 'COURIER', outletId: 'o-kmg' })?.id).toBe('st-bayu')
+  })
+
+  it('pilihan sesi dari peran atau outlet lain diabaikan', () => {
+    expect(resolveStaff(s0.staff, { role: 'COURIER', outletId: 'o-kmg', staffId: 'st-rizky' })?.id).toBe('st-bayu')
+    expect(resolveStaff(s0.staff, { role: 'CASHIER', outletId: 'o-kmg', staffId: 'st-fajar' })?.role).toBe('CASHIER')
   })
 })

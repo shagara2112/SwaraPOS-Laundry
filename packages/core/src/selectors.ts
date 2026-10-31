@@ -1,7 +1,7 @@
 import { jakartaDateKey } from './domain/order-number'
 import { statusPhase } from './domain/order-status'
 import type { DemoState } from './store/state'
-import type { Order, Plan } from './types'
+import type { Order, Plan, Staff, StaffRole } from './types'
 
 export { resumeTarget } from './store/actions-order'
 
@@ -54,4 +54,10 @@ export function planUsage(limits: Plan['limits'], used: { outlets: number; staff
     reached: n >= limit,
   })
   return [item('outlets', 'Outlet', used.outlets, limits.outlets), item('staff', 'Karyawan', used.staff, limits.staff)]
+}
+
+/** Staf yang memakai aplikasi: pilihan sesi bila peran dan outlet cocok, selain itu staf pertama peran itu di outlet. */
+export function resolveStaff(staff: Staff[], session: { role: StaffRole; outletId: string; staffId?: string | null }): Staff | undefined {
+  const mine = staff.filter((s) => s.role === session.role && s.outletId === session.outletId)
+  return mine.find((s) => s.id === session.staffId) ?? mine[0] ?? staff.find((s) => s.role === session.role)
 }

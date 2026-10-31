@@ -109,7 +109,8 @@ function NewOrderForm({ draft, setDraft }: { draft: OrderDraft; setDraft: (fn: (
     if (result.ok) {
       AsyncStorage.removeItem(DRAFT_KEY).catch(() => {})
       reset()
-      router.replace(`/order/${result.value.id}?baru=1`)
+      // push, bukan replace: replace dari dalam tab menukar seluruh navigator kasir sehingga tombol Back Android menutup aplikasi.
+      router.push(`/order/${result.value.id}?baru=1`)
     }
     savingRef.current = false
   }
