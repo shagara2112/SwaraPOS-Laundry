@@ -391,7 +391,7 @@ export function createSeed(now: Date): DemoState {
   return {
     now: now.toISOString(),
     tenantActor: { id: 'st-rina', name: 'Rina Wulandari' },
-    adminActor: { id: 'pa-1', name: 'Sinta (Finance)' },
+    adminActor: { id: 'pa-1', name: 'Sinta Maharani' },
     tenant: { id: 't1', name: 'Laundry Bersih Kilat', expressSurchargePct: 50 },
     outlets: OUTLETS,
     activeOutletId: 'o-kmg',
@@ -413,7 +413,7 @@ export function createSeed(now: Date): DemoState {
 function createPlatform(nowMs: number): DemoState['platform'] {
   const iso = (ms: number) => new Date(ms).toISOString()
   const owner: Actor = { id: 'pa-0', name: 'Arif (Platform Owner)' }
-  const finance: Actor = { id: 'pa-1', name: 'Sinta (Finance)' }
+  const finance: Actor = { id: 'pa-1', name: 'Sinta Maharani' }
 
   const plans: Plan[] = [
     {
