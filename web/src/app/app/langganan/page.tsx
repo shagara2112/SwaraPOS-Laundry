@@ -12,23 +12,27 @@ import { Tabs } from '@/components/ui/tabs'
 import { cn } from '@/lib/cn'
 import { formatDate, formatDateTime, formatRupiah } from '@/lib/format'
 import { INVOICE_STATUS, SUBMISSION_STATUS, TENANT_STATUS } from '@/lib/labels'
+import { planUsage, type PlanUsageItem } from '@/lib/selectors'
 import { useDemo } from '@/lib/store/demo-store'
 
-function Meter({ label, used, limit }: { label: string; used: number; limit: number }) {
-  const pct = Math.min(100, Math.round((used / limit) * 100))
-  const high = pct >= 80
+function Meter({ item }: { item: PlanUsageItem }) {
+  const high = item.pct >= 80
   return (
     <div>
       <div className="flex items-baseline justify-between text-sm">
-        <span className="text-fg-muted">{label}</span>
+        <span className="text-fg-muted">{item.label}</span>
         <span className="tabular font-semibold text-fg">
-          {used.toLocaleString('id-ID')} / {limit.toLocaleString('id-ID')}
+          {item.used.toLocaleString('id-ID')} / {item.limit.toLocaleString('id-ID')}
         </span>
       </div>
-      <div className="mt-2 h-2 rounded-full bg-surface-2" role="meter" aria-valuenow={used} aria-valuemin={0} aria-valuemax={limit} aria-label={label}>
-        <div className={cn('h-full rounded-full', high ? 'bg-phase-qc' : 'bg-primary')} style={{ width: `${pct}%` }} />
+      <div className="mt-2 h-2 rounded-full bg-surface-2" role="meter" aria-valuenow={item.used} aria-valuemin={0} aria-valuemax={item.limit} aria-label={item.label}>
+        <div className={cn('h-full rounded-full', high ? 'bg-phase-qc' : 'bg-primary')} style={{ width: `${item.pct}%` }} />
       </div>
-      {high && <p className="mt-1 text-xs font-medium text-phase-qc">{pct}% terpakai — pertimbangkan upgrade.</p>}
+      {item.reached ? (
+        <p className="mt-1 text-xs font-medium text-phase-qc">Batas paket tercapai — upgrade untuk menambah {item.label.toLowerCase()}.</p>
+      ) : (
+        high && <p className="mt-1 text-xs font-medium text-phase-qc">{item.pct}% terpakai — pertimbangkan upgrade.</p>
+      )}
     </div>
   )
 }
@@ -79,10 +83,17 @@ export default function LanggananPage() {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="Pemakaian bulan ini" />
+          <CardHeader title="Pemakaian paket" description="Paket membatasi jumlah outlet dan karyawan. Order tidak dibatasi." />
           <CardBody className="space-y-5 pt-3">
-            <Meter label="Order" used={tenant.ordersThisMonth} limit={plan.limits.ordersPerMonth} />
-            <Meter label="Staf" used={staffCount} limit={plan.limits.staff} />
+            {planUsage(plan.limits, { outlets: tenant.outletCount, staff: staffCount }).map((item) => (
+              <Meter key={item.key} item={item} />
+            ))}
+            <div className="flex items-baseline justify-between border-t border-border pt-4 text-sm">
+              <span className="text-fg-muted">Order bulan ini</span>
+              <span className="tabular font-semibold text-fg">
+                {tenant.ordersThisMonth.toLocaleString('id-ID')} <span className="font-normal text-fg-subtle">· tanpa batas</span>
+              </span>
+            </div>
           </CardBody>
         </Card>
       </div>

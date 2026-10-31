@@ -15,6 +15,7 @@ import { Field } from '@/components/ui/field'
 import { Select } from '@/components/ui/select'
 import { formatDate, formatDateTime, formatRupiah } from '@/lib/format'
 import { INVOICE_STATUS, TENANT_STATUS } from '@/lib/labels'
+import { planUsage } from '@/lib/selectors'
 import { act } from '@/lib/store/act'
 import { setTenantStatus, startSupportSession } from '@/lib/store/actions-platform'
 import { useDemo } from '@/lib/store/demo-store'
@@ -54,7 +55,7 @@ export default function TenantDetailPage() {
 
   const plan = plans.find((p) => p.code === tenant.plan)!
   const invoices = allInvoices.filter((i) => i.tenantId === tenant.id).sort((a, b) => b.dueAt.localeCompare(a.dueAt))
-  const usage = Math.round((tenant.ordersThisMonth / plan.limits.ordersPerMonth) * 100)
+  const usage = planUsage(plan.limits, { outlets: tenant.outletCount, staff: tenant.userCount })
   const recentOrders = tenant.id === ownTenantId ? [...orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5) : []
 
   return (
@@ -122,17 +123,26 @@ export default function TenantDetailPage() {
         </Card>
         <Card>
           <CardHeader title={`Paket ${plan.name}`} description={`${formatRupiah(plan.pricePerOutletMonth)} / outlet / bulan`} />
-          <CardBody className="space-y-2 pt-3 text-sm">
-            <div className="flex justify-between text-fg-muted">
+          <CardBody className="space-y-3 pt-3 text-sm">
+            {usage.map((u) => (
+              <div key={u.key}>
+                <div className="flex justify-between text-fg-muted">
+                  <span>{u.label}</span>
+                  <span className="tabular font-semibold text-fg">
+                    {u.used} / {u.limit}
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 rounded-full bg-surface-2">
+                  <div className={u.pct >= 80 ? 'h-full rounded-full bg-phase-qc' : 'h-full rounded-full bg-primary'} style={{ width: `${u.pct}%` }} />
+                </div>
+              </div>
+            ))}
+            <p className="flex justify-between border-t border-border pt-2 text-fg-muted">
               <span>Order bulan ini</span>
               <span className="tabular font-semibold text-fg">
-                {tenant.ordersThisMonth.toLocaleString('id-ID')} / {plan.limits.ordersPerMonth.toLocaleString('id-ID')}
+                {tenant.ordersThisMonth.toLocaleString('id-ID')} <span className="font-normal text-fg-subtle">· tanpa batas</span>
               </span>
-            </div>
-            <div className="h-2 rounded-full bg-surface-2">
-              <div className={usage >= 80 ? 'h-full rounded-full bg-phase-qc' : 'h-full rounded-full bg-primary'} style={{ width: `${Math.min(100, usage)}%` }} />
-            </div>
-            <p className="text-xs text-fg-subtle">{usage}% kuota terpakai</p>
+            </p>
           </CardBody>
         </Card>
         <Card>

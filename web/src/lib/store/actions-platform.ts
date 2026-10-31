@@ -238,6 +238,8 @@ export function updatePlan(
   if (patch.pricePerOutletMonth !== undefined && !(Number.isInteger(patch.pricePerOutletMonth) && patch.pricePerOutletMonth >= 0)) {
     return fail('NOT_ALLOWED')
   }
+  const positive = (n: number) => Number.isInteger(n) && n > 0
+  if (patch.limits && !(positive(patch.limits.outlets) && positive(patch.limits.staff))) return fail('NOT_ALLOWED')
 
   const updated: Plan = { ...plan, ...patch }
   return {
@@ -249,7 +251,7 @@ export function updatePlan(
       action: 'plan.updated',
       entity: 'plan',
       entityId: code,
-      detail: `${updated.name}: ${formatRupiah(updated.pricePerOutletMonth)}/outlet/bulan, ${updated.limits.ordersPerMonth.toLocaleString('id-ID')} order, ${updated.limits.staff} staf.`,
+      detail: `${updated.name}: ${formatRupiah(updated.pricePerOutletMonth)}/outlet/bulan, maks. ${updated.limits.outlets} outlet, ${updated.limits.staff} karyawan.`,
     }),
   }
 }

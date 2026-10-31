@@ -438,14 +438,14 @@ function createPlatform(nowMs: number): DemoState['platform'] {
       code: 'BASIC',
       name: 'Basic',
       pricePerOutletMonth: 149000,
-      limits: { ordersPerMonth: 1500, staff: 5 },
+      limits: { outlets: 1, staff: 5 },
       features: ['Order & kasir', 'Produksi & QC', 'Pickup & delivery', 'Lacak pelanggan', 'WhatsApp manual', 'Laporan dasar'],
     },
     {
       code: 'PRO',
       name: 'Pro',
       pricePerOutletMonth: 299000,
-      limits: { ordersPerMonth: 6000, staff: 25 },
+      limits: { outlets: 10, staff: 25 },
       features: ['Order & kasir', 'Produksi & QC', 'Pickup & delivery', 'Lacak pelanggan', 'WhatsApp manual', 'Laporan dasar', 'Laporan lanjutan & export', 'Multi-outlet', 'Pengingat otomatis'],
     },
   ]
@@ -484,7 +484,7 @@ function createPlatform(nowMs: number): DemoState['platform'] {
   ]
 
   const audit: AuditEntry[] = [
-    { id: 'aud-seed-1', at: iso(nowMs - 40 * DAY), actor: owner, action: 'plan.updated', entity: 'plan', entityId: 'PRO', detail: 'Limit order Pro dinaikkan menjadi 6.000/bulan.' },
+    { id: 'aud-seed-1', at: iso(nowMs - 40 * DAY), actor: owner, action: 'plan.updated', entity: 'plan', entityId: 'PRO', detail: 'Limit karyawan Pro dinaikkan menjadi 25.' },
     { id: 'aud-seed-2', at: iso(nowMs - 26 * DAY), actor: finance, action: 'subscription.payment_approved', tenantId: 't5', entity: 'payment_submission', entityId: 'sub-t5-10', detail: 'INV-2026-10-0005 disetujui. Cocok dengan mutasi BCA.' },
     { id: 'aud-seed-3', at: iso(nowMs - 20 * DAY), actor: owner, action: 'tenant.suspended', tenantId: 't6', entity: 'tenant', entityId: 't6', detail: 'Tunggakan 2 periode tanpa respons.' },
     { id: 'aud-seed-4', at: iso(nowMs - 9 * DAY), actor: { id: 'st-rina', name: 'Rina Wulandari' }, action: 'service.price_changed', tenantId: 't1', entity: 'service', entityId: 's-kilo-reg', detail: 'Kemang: Rp6.500 → Rp7.000 per kg.' },

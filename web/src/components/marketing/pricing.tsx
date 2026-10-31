@@ -8,14 +8,14 @@ const PLANS = [
     name: 'Basic',
     price: 149000,
     tagline: 'Untuk laundry satu outlet yang mulai digital.',
-    features: ['Order & kasir dengan label QR', 'Papan produksi & QC wajib', 'Pickup & delivery zona radius', 'Link lacak pelanggan + WhatsApp', 'Laporan dasar', 'Hingga 5 staf'],
+    features: ['Order & kasir dengan label QR', 'Papan produksi & QC wajib', 'Pickup & delivery zona radius', 'Link lacak pelanggan + WhatsApp', 'Laporan dasar', '1 outlet, hingga 5 karyawan', 'Order tanpa batas'],
     highlight: false,
   },
   {
     name: 'Pro',
     price: 299000,
     tagline: 'Untuk laundry yang berkembang ke banyak outlet.',
-    features: ['Semua fitur Basic', 'Multi-outlet & harga per outlet', 'Laporan lanjutan & export CSV', 'Pengingat order terlambat', 'Kuota order lebih tinggi', 'Hingga 25 staf'],
+    features: ['Semua fitur Basic', 'Multi-outlet & harga per outlet', 'Laporan lanjutan & export CSV', 'Pengingat order terlambat', 'Hingga 10 outlet & 25 karyawan', 'Order tanpa batas'],
     highlight: true,
   },
 ]

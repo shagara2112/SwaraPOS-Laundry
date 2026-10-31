@@ -16,6 +16,7 @@ import { Tabs } from '@/components/ui/tabs'
 import { toast } from '@/components/ui/toast'
 import { buildWaMessage, WA_EVENT_LABEL } from '@/lib/domain/whatsapp'
 import { ROLE_LABEL } from '@/lib/labels'
+import { planUsage } from '@/lib/selectors'
 import { act } from '@/lib/store/act'
 import { updateZones } from '@/lib/store/actions-catalog'
 import { useDemo } from '@/lib/store/demo-store'
@@ -60,21 +61,33 @@ type Invite = { name: string; phone: string; role: StaffRole }
 function StaffTab() {
   const staff = useDemo((s) => s.staff)
   const outlets = useDemo((s) => s.outlets)
+  const plan = useDemo((s) => s.platform.plans.find((p) => p.code === s.platform.tenants.find((t) => t.id === s.tenant.id)?.plan))
   const [invites, setInvites] = useState<Invite[]>([])
+  const staffUsage = plan ? planUsage(plan.limits, { outlets: outlets.length, staff: staff.length + invites.length })[1] : undefined
+  const full = !!staffUsage?.reached
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<Invite>({ name: '', phone: '', role: 'CASHIER' })
   return (
     <Card>
       <CardHeader
         title="Karyawan & peran"
-        description="Akses dibatasi per peran dan outlet."
+        description={
+          staffUsage
+            ? `Akses dibatasi per peran dan outlet. ${staffUsage.used} dari ${staffUsage.limit} karyawan sesuai paket ${plan?.name}.`
+            : 'Akses dibatasi per peran dan outlet.'
+        }
         action={
-          <Button size="sm" onClick={() => setOpen(true)}>
+          <Button size="sm" onClick={() => setOpen(true)} disabled={full} title={full ? 'Batas karyawan paket tercapai' : undefined}>
             <UserPlus aria-hidden />
             Undang
           </Button>
         }
       />
+      {full && (
+        <p className="mx-5 mt-3 rounded-xl bg-phase-qc-soft px-3 py-2 text-sm text-phase-qc">
+          Batas karyawan paket {plan?.name} tercapai. Upgrade paket di menu Langganan untuk menambah karyawan.
+        </p>
+      )}
       <Table className="mt-3">
         <thead>
           <tr>

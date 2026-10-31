@@ -1,7 +1,7 @@
 import { jakartaDateKey } from '@/lib/domain/order-number'
 import { statusPhase } from '@/lib/domain/order-status'
 import type { DemoState } from '@/lib/store/state'
-import type { Order } from '@/lib/types'
+import type { Order, Plan } from '@/lib/types'
 
 export { resumeTarget } from '@/lib/store/actions-order'
 
@@ -39,4 +39,19 @@ export function dashboardKpis(
 
 export function trackingUrl(token: string, origin: string): string {
   return `${origin}/lacak/${token}`
+}
+
+export type PlanUsageItem = { key: 'outlets' | 'staff'; label: string; used: number; limit: number; pct: number; reached: boolean }
+
+/** Pemakaian paket terhadap limitnya. Hanya outlet dan karyawan yang dibatasi; order tidak. */
+export function planUsage(limits: Plan['limits'], used: { outlets: number; staff: number }): PlanUsageItem[] {
+  const item = (key: PlanUsageItem['key'], label: string, n: number, limit: number): PlanUsageItem => ({
+    key,
+    label,
+    used: n,
+    limit,
+    pct: Math.min(100, Math.round((n / limit) * 100)),
+    reached: n >= limit,
+  })
+  return [item('outlets', 'Outlet', used.outlets, limits.outlets), item('staff', 'Karyawan', used.staff, limits.staff)]
 }

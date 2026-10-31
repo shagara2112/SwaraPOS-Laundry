@@ -197,7 +197,8 @@ export interface Plan {
   code: PlanCode
   name: string
   pricePerOutletMonth: number
-  limits: { ordersPerMonth: number; staff: number }
+  /** Order tidak dibatasi; yang dibatasi jumlah outlet dan karyawan. */
+  limits: { outlets: number; staff: number }
   features: string[]
 }
 

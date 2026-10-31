@@ -169,3 +169,19 @@ describe('bukti ganda (review final)', () => {
     expect(reviewSubmission(paidState, s1.value.id, 'APPROVED', '', admin, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
   })
 })
+
+describe('limit paket (outlet & karyawan)', () => {
+  it('limit outlet atau karyawan harus lebih dari 0', () => {
+    expect(updatePlan(s0, 'BASIC', { limits: { outlets: 0, staff: 5 } }, admin, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(updatePlan(s0, 'BASIC', { limits: { outlets: 1, staff: 0 } }, admin, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+  })
+
+  it('audit menyebut limit outlet dan karyawan, bukan order', () => {
+    const { state, value } = ok(updatePlan(s0, 'PRO', { limits: { outlets: 12, staff: 30 } }, admin, now))
+    expect(value.limits).toEqual({ outlets: 12, staff: 30 })
+    const detail = state.platform.audit.at(-1)!.detail
+    expect(detail).toContain('12 outlet')
+    expect(detail).toContain('30 karyawan')
+    expect(detail).not.toContain('order')
+  })
+})

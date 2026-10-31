@@ -15,26 +15,26 @@ import type { Plan } from '@/lib/types'
 
 function PlanEditor({ plan, allFeatures }: { plan: Plan; allFeatures: string[] }) {
   const [price, setPrice] = useState(String(plan.pricePerOutletMonth))
-  const [orders, setOrders] = useState(String(plan.limits.ordersPerMonth))
+  const [outlets, setOutlets] = useState(String(plan.limits.outlets))
   const [staff, setStaff] = useState(String(plan.limits.staff))
   const [features, setFeatures] = useState(plan.features)
   const priceValue = parseRupiahID(price)
-  const ordersValue = parseRupiahID(orders)
+  const outletsValue = parseRupiahID(outlets)
   const staffValue = parseRupiahID(staff)
-  const invalid = priceValue === null || !ordersValue || !staffValue
+  const invalid = priceValue === null || !outletsValue || !staffValue
 
   return (
     <Card>
-      <CardHeader title={`Paket ${plan.name}`} description="Harga dan limit disnapshot pada awal periode; invoice lama tidak berubah." />
+      <CardHeader title={`Paket ${plan.name}`} description="Order tidak dibatasi. Harga dan limit disnapshot pada awal periode; invoice lama tidak berubah." />
       <CardBody className="space-y-5 pt-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Harga / outlet / bulan (Rp)" htmlFor={`${plan.code}-price`}>
             <Input id={`${plan.code}-price`} inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} className="tabular" />
           </Field>
-          <Field label="Limit order / bulan" htmlFor={`${plan.code}-orders`}>
-            <Input id={`${plan.code}-orders`} inputMode="numeric" value={orders} onChange={(e) => setOrders(e.target.value)} className="tabular" />
+          <Field label="Maks. outlet" htmlFor={`${plan.code}-outlets`}>
+            <Input id={`${plan.code}-outlets`} inputMode="numeric" value={outlets} onChange={(e) => setOutlets(e.target.value)} className="tabular" />
           </Field>
-          <Field label="Limit staf" htmlFor={`${plan.code}-staff`}>
+          <Field label="Maks. karyawan" htmlFor={`${plan.code}-staff`}>
             <Input id={`${plan.code}-staff`} inputMode="numeric" value={staff} onChange={(e) => setStaff(e.target.value)} className="tabular" />
           </Field>
         </div>
@@ -54,7 +54,7 @@ function PlanEditor({ plan, allFeatures }: { plan: Plan; allFeatures: string[] }
             ))}
           </div>
         </fieldset>
-        {invalid && <p className="text-sm font-medium text-danger">Harga harus angka bulat; limit order dan staf harus lebih dari 0.</p>}
+        {invalid && <p className="text-sm font-medium text-danger">Harga harus angka bulat; limit outlet dan karyawan harus lebih dari 0.</p>}
         <Button
           disabled={invalid}
           onClick={() =>
@@ -63,7 +63,7 @@ function PlanEditor({ plan, allFeatures }: { plan: Plan; allFeatures: string[] }
                 updatePlan(
                   s,
                   plan.code,
-                  { pricePerOutletMonth: priceValue!, limits: { ordersPerMonth: ordersValue!, staff: staffValue! }, features: allFeatures.filter((f) => features.includes(f)) },
+                  { pricePerOutletMonth: priceValue!, limits: { outlets: outletsValue!, staff: staffValue! }, features: allFeatures.filter((f) => features.includes(f)) },
                   s.adminActor,
                   new Date(),
                 ),

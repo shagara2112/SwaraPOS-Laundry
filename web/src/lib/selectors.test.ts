@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { amountDue, dashboardKpis, isLate, resumeTarget, trackingUrl } from './selectors'
+import { amountDue, dashboardKpis, isLate, planUsage, resumeTarget, trackingUrl } from './selectors'
 import { createSeed } from './store/seed'
 import type { DemoState } from './store/state'
 import type { Order } from './types'
@@ -66,5 +66,21 @@ describe('resumeTarget & trackingUrl', () => {
 
   it('membentuk URL lacak', () => {
     expect(trackingUrl('abc123', 'https://x.test')).toBe('https://x.test/lacak/abc123')
+  })
+})
+
+describe('planUsage', () => {
+  it('menghitung pemakaian outlet dan staf terhadap limit paket', () => {
+    const usage = planUsage({ outlets: 10, staff: 25 }, { outlets: 2, staff: 9 })
+    expect(usage).toEqual([
+      { key: 'outlets', label: 'Outlet', used: 2, limit: 10, pct: 20, reached: false },
+      { key: 'staff', label: 'Karyawan', used: 9, limit: 25, pct: 36, reached: false },
+    ])
+  })
+
+  it('menandai limit tercapai dan tidak melewati 100%', () => {
+    const [outlets, staff] = planUsage({ outlets: 1, staff: 5 }, { outlets: 1, staff: 7 })
+    expect(outlets).toMatchObject({ reached: true, pct: 100 })
+    expect(staff).toMatchObject({ reached: true, pct: 100 })
   })
 })

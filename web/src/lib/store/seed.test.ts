@@ -68,3 +68,11 @@ describe('shiftDemoTime (review final)', () => {
     expect(isDemoStale(s, new Date(now.getTime() + 13 * 3600_000))).toBe(true)
   })
 })
+
+describe('paket langganan', () => {
+  it('hanya membatasi outlet dan karyawan, order tidak dibatasi', () => {
+    const plans = createSeed(now).platform.plans
+    expect(plans.find((p) => p.code === 'BASIC')!.limits).toEqual({ outlets: 1, staff: 5 })
+    expect(plans.find((p) => p.code === 'PRO')!.limits).toEqual({ outlets: 10, staff: 25 })
+  })
+})

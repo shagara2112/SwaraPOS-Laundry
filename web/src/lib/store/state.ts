@@ -19,7 +19,8 @@ import type {
 
 // Naikkan versi setiap kali bentuk DemoState berubah: migratePersisted hanya memeriksa kerangka atas.
 // v2: metode bayar outlet terstruktur (bank, rekening, merchant QRIS, aktif, urutan).
-export const DEMO_STATE_VERSION = 2
+// v3: limit paket = outlet + karyawan (tanpa limit order).
+export const DEMO_STATE_VERSION = 3
 
 /** Cara pelanggan membayar ke outlet; dana masuk langsung ke rekening/QRIS milik owner (PRD §G). */
 export interface OutletPaymentMethod {

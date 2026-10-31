@@ -192,7 +192,9 @@ SwaraPOS Laundry menggunakan model **per outlet per bulan** dengan dua paket awa
 - **Basic:** fitur operasional inti untuk satu outlet, dengan batas penggunaan dan fitur sesuai paket.
 - **Pro:** fitur operasional lebih lengkap, laporan lanjutan, automasi, dan kapasitas lebih tinggi.
 
-Harga nominal, batas kuota, masa trial, dan fitur detail tiap paket masih perlu ditentukan. Tagihan SaaS dipisahkan dari pembayaran order laundry pelanggan. Status subscription: trial, active, past_due, suspended, cancelled.
+**Batas paket (diputuskan):** jumlah order tidak dibatasi. Batas yang berlaku hanya jumlah outlet dan jumlah karyawan per paket (prototipe: Basic 1 outlet / 5 karyawan, Pro 10 outlet / 25 karyawan).
+
+Harga nominal, angka batas outlet/karyawan final, masa trial, dan fitur detail tiap paket masih perlu ditentukan. Tagihan SaaS dipisahkan dari pembayaran order laundry pelanggan. Status subscription: trial, active, past_due, suspended, cancelled.
 
 Pada tahap awal, mekanisme pembayaran langganan menggunakan **konfirmasi manual**. Tenant memilih salah satu instruksi pembayaran aktif yang disediakan platform, melakukan pembayaran di luar SwaraPOS, lalu mengunggah bukti bayar untuk direview oleh Finance/Platform Owner. Metode yang dapat dikonfigurasi dari dashboard adalah transfer bank, link pembayaran seperti Lynk.id, dan QRIS. SwaraPOS tidak memproses atau mengonfirmasi pembayaran secara otomatis pada MVP.
 
