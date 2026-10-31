@@ -1,5 +1,5 @@
 import { formatRupiah } from '@/lib/format'
-import { formatQty } from '@/lib/labels'
+import { formatLineDetail } from '@/lib/labels'
 import type { Order } from '@/lib/types'
 
 export function OrderItemsTable({ order }: { order: Order }) {
@@ -17,9 +17,7 @@ export function OrderItemsTable({ order }: { order: Order }) {
           <li key={item.id} className="flex items-start justify-between gap-4 py-3">
             <div className="min-w-0">
               <p className="text-sm font-medium text-fg">{item.name}</p>
-              <p className="tabular mt-0.5 text-xs text-fg-subtle">
-                {formatQty(item.unit, item.qty)} × {formatRupiah(item.unitPrice)}
-              </p>
+              <p className="tabular mt-0.5 text-xs text-fg-subtle">{formatLineDetail(item.unit, item.qty, item.unitPrice)}</p>
             </div>
             <p className="tabular text-sm font-medium text-fg">{formatRupiah(item.total)}</p>
           </li>

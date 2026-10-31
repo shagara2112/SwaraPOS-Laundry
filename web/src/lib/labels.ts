@@ -1,4 +1,5 @@
 import type { BadgeTone } from '@/components/ui/badge'
+import { formatRupiah } from '@/lib/format'
 import type {
   DeliveryTaskStatus,
   HandbackType,
@@ -106,6 +107,12 @@ export const UNIT_SHORT: Record<PricingUnit, string> = {
 export function formatQty(unit: PricingUnit, qty: number): string {
   const n = qty.toLocaleString('id-ID', { maximumFractionDigits: 2 })
   return unit === 'ADDON' ? `${n}×` : `${n} ${UNIT_SHORT[unit]}`
+}
+
+/** Rincian baris nota: "3,5 kg × Rp7.000", atau "Add-on Rp5.000" untuk add-on. */
+export function formatLineDetail(unit: PricingUnit, qty: number, unitPrice: number): string {
+  if (unit === 'ADDON') return qty === 1 ? `Add-on ${formatRupiah(unitPrice)}` : `${qty}× add-on ${formatRupiah(unitPrice)}`
+  return `${formatQty(unit, qty)} × ${formatRupiah(unitPrice)}`
 }
 
 function span(minutes: number): string {
