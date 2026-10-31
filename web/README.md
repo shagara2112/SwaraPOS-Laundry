@@ -6,9 +6,11 @@ Spec: [`../docs/superpowers/specs/2026-10-31-web-ui-prototype-design.md`](../doc
 
 ## Menjalankan
 
+Repo ini memakai npm workspaces (`packages/core` dan `web`). Pasang dependensi dari root repo:
+
 ```bash
-npm install
-npm run dev      # http://localhost:3000
+npm install              # di root repo
+npm --prefix web run dev # http://localhost:3000
 ```
 
 Perintah lain:
@@ -42,14 +44,18 @@ Pintasan di dashboard tenant: `N` membuka order baru, `/` memfokuskan pencarian,
 ## Struktur
 
 ```text
-src/
+packages/core/src/     logika murni bersama web dan aplikasi Android (@swarapos/core)
+  domain/              mesin status order, harga, zona, WhatsApp, bukti bayar, lacak
+  store/               tipe state demo, data contoh, reducer murni per area
+  cashier.ts           ringkasan draf kasir (harga, zona, alasan belum bisa simpan)
+  permissions.ts       hak aksi per peran staf
+  labels.ts            label dan nada warna untuk enum domain
+  selectors.ts         KPI dan turunan data
+web/src/
   app/                 rute Next.js App Router
   components/          ui/ (komponen dasar), layout/, order/, cashier/, production/, tracking/, billing/, reports/, marketing/, onboarding/
-  lib/
-    domain/            logika murni tanpa React: mesin status order, harga, zona, WhatsApp, bukti bayar, lacak
-    store/             state demo (zustand + localStorage) dan reducer murni per area
-    labels.ts          label dan nada warna untuk enum domain
-    selectors.ts       KPI dan turunan data
+  lib/store/           store zustand + localStorage dan hook React
+mobile/                aplikasi Android (Expo), lihat mobile/README.md
 ```
 
-Logika di `src/lib/domain` dan reducer di `src/lib/store/actions-*.ts` tidak bergantung pada React, sehingga bisa dipindahkan ke backend saat API dibangun.
+Web mengimpor core sebagai sumber TypeScript (`@swarapos/core/<modul>`, lewat `transpilePackages`). Logika di core tidak bergantung pada React, sehingga bisa dipindahkan ke backend saat API dibangun.

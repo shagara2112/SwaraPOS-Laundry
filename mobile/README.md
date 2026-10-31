@@ -1,56 +1,84 @@
-# Welcome to your Expo app 👋
+# SwaraPOS Laundry — Prototipe Aplikasi Android
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Prototipe aplikasi staf (Expo / React Native) untuk lima peran: Owner, Kasir, Operator, QC, dan Kurir. Semua data adalah data contoh yang disimpan di perangkat; belum ada backend. Logika bisnis memakai paket yang sama dengan web, `@swarapos/core` (`../packages/core`).
 
-## Get started
+Spec: [`../docs/superpowers/specs/2026-10-31-android-app-prototype-design.md`](../docs/superpowers/specs/2026-10-31-android-app-prototype-design.md)
 
-1. Install dependencies
+## Menjalankan di HP Android (Expo Go)
+
+1. Pasang **Expo Go** dari Play Store di HP.
+2. Pastikan HP dan PC berada di jaringan Wi‑Fi yang sama.
+3. Di PC:
 
    ```bash
+   cd mobile
    npm install
-   ```
-
-2. Start the app
-
-   ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. Buka Expo Go, pilih **Scan QR code**, lalu pindai QR yang muncul di terminal.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Kamera (scan QR label dan foto bukti serah-terima) hanya bisa diuji di HP. Bila Expo Go tidak bisa terhubung (jaringan kantor sering memblokir), jalankan `npx expo start --tunnel`.
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Di browser untuk pengecekan cepat (tanpa kamera): `npm run web`.
 
-## Get a fresh project
+## Perintah
 
-When you're ready, run:
+| Perintah | Fungsi |
+|---|---|
+| `npx expo start` | Server pengembangan untuk Expo Go |
+| `npm run web` | Versi web untuk pengecekan tampilan |
+| `npm run typecheck` | Pemeriksaan tipe TypeScript |
+| `npm run lint` | ESLint (`expo lint`) |
 
-```bash
-npm run reset-project
+Tes logika bisnis ada di paket core: `npm --prefix ../packages/core test`.
+
+## Mode demo
+
+- Layar **Masuk** memilih peran dan outlet; tidak ada kata sandi. Ganti peran lewat tab **Akun → Ganti peran**.
+- **Akun → Reset data demo** mengembalikan data contoh ke awal.
+- Data tersimpan di perangkat (AsyncStorage), terpisah dari data demo di web.
+- Tombol WhatsApp membuka WhatsApp dengan pesan terisi; staf menekan kirim sendiri, lalu menandai terkirim di aplikasi.
+- QR label berisi link lacak `https://swarapos.id/lacak/<token>`; pemindai menerima QR itu, token, atau nomor order yang diketik.
+
+### Alur demo di satu HP
+
+1. **Kasir** → order dijemput + diantar → simpan → label QR tampil.
+2. **Owner** → Antar-jemput → tugaskan kurir untuk jemput.
+3. **Kurir** → tugas jemput → terima → berangkat → tiba → foto/tanda tangan + nama → selesai.
+4. **Operator** → Scan label (atau ketik nomor order) → terima di outlet → majukan sampai QC.
+5. **QC** → checklist → Lulus → order terbaca "Siap diantar".
+6. **Kasir** → detail order → Kirim WhatsApp → tandai terkirim → catat bayar.
+7. **Kasir/Owner** → detail order → buat tugas antar → tugaskan kurir → **Kurir** catat COD bila ada sisa, lalu selesai dengan bukti.
+
+## Hak per peran
+
+| Peran | Tab |
+|---|---|
+| Owner | Ringkasan · Order · Antar-jemput · Akun |
+| Kasir | Order baru · Order · Pelanggan · Akun |
+| Operator | Produksi · Scan · Akun |
+| QC | Antrean QC · Scan · Akun |
+| Kurir | Tugas · Riwayat · Akun |
+
+Tombol di detail order mengikuti matriks `can(role, action)` di `@swarapos/core/permissions`.
+
+## Batasan prototipe
+
+- Belum ada login, sinkronisasi, atau backend; tiap perangkat punya data sendiri.
+- Foto bukti hanya tersimpan sebagai berkas sementara di HP; yang tercatat di tugas adalah nama penerima dan metode bukti.
+- Cetak label ke printer thermal Bluetooth belum tersedia.
+- Langganan, pengaturan, laporan lengkap, dan Super Admin tetap di web.
+- Rilis Play Store memerlukan build Android (EAS Build) dan uji tertutup; Expo Go hanya untuk pengujian.
+
+## Struktur
+
+```text
+src/
+  app/          rute Expo Router: masuk, owner/, kasir/, operator/, qc/, kurir/ (tab per peran), order/[id], tugas/[id]
+  screens/      layar per fitur (dipakai ulang oleh beberapa rute)
+  components/   komponen domain: kartu order, checklist QC, lembar bayar, WhatsApp, label, tanda tangan, kamera
+  ui/           komponen dasar: Button, Card, Sheet, TextField, Screen, Toast
+  store/        zustand + AsyncStorage: data demo, sesi peran, hook turunan
+  theme.ts      warna, font, jarak
 ```
-
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
