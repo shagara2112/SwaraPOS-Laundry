@@ -32,7 +32,7 @@ export function OrderCard({ order, customer, now }: { order: Order; customer?: C
         {customer?.name ?? '-'} · {itemSummary(order)}
       </Text>
       <View style={styles.badges}>
-        <StatusBadge status={order.status} />
+        <StatusBadge status={order.status} handback={order.handback} />
         <Badge tone={pay.tone} label={pay.label} />
         {order.express && <Badge tone="warning" label="Express" icon={Zap} />}
       </View>

@@ -56,7 +56,7 @@ export function ProductionCard({
           {items}
         </Text>
         <View style={styles.badges}>
-          {showStatus && <StatusBadge status={order.status} />}
+          {showStatus && <StatusBadge status={order.status} handback={order.handback} />}
           {order.express && <Badge tone="warning" label="Express" icon={Zap} />}
           <Text style={[styles.due, late && { color: color.danger }]}>{formatDueIn(order.dueAt, now)}</Text>
         </View>

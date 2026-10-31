@@ -1,18 +1,22 @@
+import { isRelevantTask } from '@swarapos/core/delivery'
 import { isTerminal } from '@swarapos/core/domain/order-status'
 import { formatDateTime, formatRupiah } from '@swarapos/core/format'
-import { CHANNEL_LABEL, formatDueIn, formatLineDetail, HANDBACK_LABEL, INTAKE_LABEL } from '@swarapos/core/labels'
+import { CHANNEL_LABEL, DELIVERY_STATUS, formatDueIn, formatLineDetail, HANDBACK_LABEL, INTAKE_LABEL } from '@swarapos/core/labels'
 import { can } from '@swarapos/core/permissions'
 import { isLate } from '@swarapos/core/selectors'
+import type { DeliveryTask } from '@swarapos/core/types'
 import { Redirect, useLocalSearchParams } from 'expo-router'
-import { CalendarClock, Phone, QrCode, SearchX, Store, Zap } from 'lucide-react-native'
-import { useState } from 'react'
+import { Bike, CalendarClock, Phone, QrCode, SearchX, Store, Zap } from 'lucide-react-native'
+import { useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
+import { CourierPickerSheet } from '@/components/CourierPickerSheet'
 import { LabelSheet } from '@/components/LabelSheet'
 import { OrderTimeline } from '@/components/OrderTimeline'
 import { PaymentPanel } from '@/components/PaymentSheet'
 import { QcChecklist } from '@/components/QcChecklist'
 import { StatusActions } from '@/components/StatusActions'
 import { StatusBadge } from '@/components/StatusBadge'
+import { TASK_TYPE_LABEL } from '@/components/TaskCard'
 import { WhatsAppPanel } from '@/components/WhatsAppPanel'
 import { useNow } from '@/lib/use-now'
 import { useDemo } from '@/store/demo-store'
@@ -34,6 +38,10 @@ export function OrderDetailScreen() {
   const order = useDemo((s) => s.orders.find((o) => o.id === id))
   const customer = useDemo((s) => s.customers.find((c) => c.id === order?.customerId))
   const outlet = useDemo((s) => s.outlets.find((o) => o.id === order?.outletId))
+  const allTasks = useDemo((s) => s.deliveryTasks)
+  const staff = useDemo((s) => s.staff)
+  const tasks = useMemo(() => allTasks.filter((t) => t.orderId === id), [allTasks, id])
+  const [assigning, setAssigning] = useState<DeliveryTask | null>(null)
   // Order baru dari kasir membuka label otomatis (?baru=1).
   const [labelOpen, setLabelOpen] = useState(!!baru)
 
@@ -59,7 +67,7 @@ export function OrderDetailScreen() {
     <Screen title={order.orderNo} subtitle={customer.name} back>
       <Card style={{ gap: space(3) }}>
         <View style={styles.badges}>
-          <StatusBadge status={order.status} />
+          <StatusBadge status={order.status} handback={order.handback} />
           {order.express && <Badge tone="warning" label="Express" icon={Zap} />}
           {late && <Badge tone="danger" label={formatDueIn(order.dueAt, now)} />}
         </View>
@@ -118,6 +126,34 @@ export function OrderDetailScreen() {
         </>
       )}
 
+      {tasks.length > 0 && (
+        <>
+          <SectionTitle title="Antar-jemput" />
+          <Card style={{ gap: space(3) }}>
+            {tasks.map((t) => {
+              const st = DELIVERY_STATUS[t.status]
+              const courier = staff.find((x) => x.id === t.courierId)
+              const assignable = (t.status === 'UNASSIGNED' || t.status === 'FAILED') && isRelevantTask(t, order) && can(role, 'delivery.assign')
+              return (
+                <View key={t.id} style={{ gap: space(2) }}>
+                  <View style={styles.taskRow}>
+                    <Bike size={18} color={color.primary} />
+                    <Text style={styles.taskType}>{TASK_TYPE_LABEL[t.type]}</Text>
+                    <Badge tone={st.tone} label={st.label} />
+                  </View>
+                  <Text style={styles.metaText}>
+                    {formatDateTime(t.scheduledAt)}
+                    {courier ? ` · ${courier.name}` : ''}
+                    {t.failReason ? ` · gagal: ${t.failReason}` : ''}
+                  </Text>
+                  {assignable && <Button title="Tugaskan kurir" icon={Bike} onPress={() => setAssigning(t)} />}
+                </View>
+              )
+            })}
+          </Card>
+        </>
+      )}
+
       <SectionTitle title="Pembayaran & notifikasi" />
       <View style={{ gap: space(3) }}>
         <PaymentPanel order={order} actor={actor} canRecord={can(role, 'order.payment')} />
@@ -130,6 +166,7 @@ export function OrderDetailScreen() {
         <OrderTimeline history={order.history} />
       </Card>
 
+      <CourierPickerSheet task={assigning} title={order.orderNo} onClose={() => setAssigning(null)} />
       <LabelSheet visible={labelOpen} onClose={() => setLabelOpen(false)} order={order} outlet={outlet} customer={customer} justCreated={!!baru} />
     </Screen>
   )
@@ -155,4 +192,6 @@ const styles = StyleSheet.create({
   itemTotal: { fontFamily: font.semibold, fontSize: 14, color: color.fg },
   totals: { gap: space(1.5), borderTopWidth: 1, borderTopColor: color.border, paddingTop: space(3) },
   notes: { fontFamily: font.regular, fontSize: 14, color: color.muted },
+  taskRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
+  taskType: { flex: 1, fontFamily: font.semibold, fontSize: 15, color: color.fg },
 })

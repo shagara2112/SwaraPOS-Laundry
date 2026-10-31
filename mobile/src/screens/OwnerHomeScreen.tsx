@@ -73,7 +73,7 @@ export function OwnerHomeScreen() {
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                <StatusBadge status={o.status} />
+                <StatusBadge status={o.status} handback={o.handback} />
                 <Text style={[styles.sub, { color: isLate(o, now) ? color.danger : tone.qc.fg }]}>{formatDueIn(o.dueAt, now)}</Text>
               </View>
             </Pressable>

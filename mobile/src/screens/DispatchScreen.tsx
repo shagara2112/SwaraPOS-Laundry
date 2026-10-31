@@ -1,23 +1,22 @@
 import { isRelevantTask } from '@swarapos/core/delivery'
 import { formatDateTime, formatRupiah } from '@swarapos/core/format'
 import { DELIVERY_STATUS } from '@swarapos/core/labels'
-import { assignCourier } from '@swarapos/core/store/actions-catalog'
 import { transitionOrder } from '@swarapos/core/store/actions-order'
 import type { DeliveryTask, DeliveryTaskStatus, Order } from '@swarapos/core/types'
 import { router } from 'expo-router'
 import { Bike, CalendarClock, MapPin, PackageCheck, Truck } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { CourierPickerSheet } from '@/components/CourierPickerSheet'
 import { act } from '@/store/act'
 import { useDemo } from '@/store/demo-store'
-import { useActiveOutlet, useActor, useCustomerMap, useOutletOrders } from '@/store/hooks'
+import { useActor, useCustomerMap, useOutletOrders } from '@/store/hooks'
 import { color, font, radius, space, tone } from '@/theme'
 import { Badge } from '@/ui/Badge'
 import { Button } from '@/ui/Button'
 import { Card, SectionTitle } from '@/ui/Card'
 import { EmptyState, Segmented } from '@/ui/misc'
 import { Screen } from '@/ui/Screen'
-import { Sheet } from '@/ui/Sheet'
 
 const GROUPS: { id: string; label: string; statuses: DeliveryTaskStatus[] }[] = [
   { id: 'todo', label: 'Perlu ditugaskan', statuses: ['UNASSIGNED', 'FAILED'] },
@@ -28,7 +27,6 @@ const GROUPS: { id: string; label: string; statuses: DeliveryTaskStatus[] }[] = 
 export function DispatchScreen() {
   const orders = useOutletOrders()
   const customers = useCustomerMap()
-  const outlet = useActiveOutlet()
   const actor = useActor()
   const allTasks = useDemo((s) => s.deliveryTasks)
   const staff = useDemo((s) => s.staff)
@@ -36,7 +34,6 @@ export function DispatchScreen() {
   const [assigning, setAssigning] = useState<DeliveryTask | null>(null)
 
   const orderMap = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders])
-  const couriers = staff.filter((s) => s.role === 'COURIER' && s.outletId === outlet.id)
   const tasks = allTasks.filter((t) => t.type === type && orderMap.has(t.orderId)).sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt))
   const readyToDeliver = orders.filter((o) => o.status === 'READY_FOR_PICKUP' && o.handback === 'DELIVERY' && !allTasks.some((t) => t.orderId === o.id && t.type === 'DELIVERY'))
   const inGroup = (t: DeliveryTask, statuses: DeliveryTaskStatus[]) => statuses.includes(t.status) && (t.status === 'DONE' || isRelevantTask(t, orderMap.get(t.orderId)))
@@ -97,26 +94,7 @@ export function DispatchScreen() {
         )
       })}
 
-      <Sheet visible={!!assigning} onClose={() => setAssigning(null)} title="Pilih kurir" description={assigning ? orderMap.get(assigning.orderId)?.orderNo : undefined}>
-        {couriers.map((c) => (
-          <Pressable
-            key={c.id}
-            style={styles.courier}
-            accessibilityRole="button"
-            onPress={() => {
-              if (!assigning) return
-              const r = act((s) => assignCourier(s, assigning.id, c.id, actor, new Date()), `Ditugaskan ke ${c.name}`)
-              if (r.ok) setAssigning(null)
-            }}
-          >
-            <Bike size={20} color={color.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.courierName}>{c.name}</Text>
-              <Text style={styles.sub}>{c.phone}</Text>
-            </View>
-          </Pressable>
-        ))}
-      </Sheet>
+      <CourierPickerSheet task={assigning} title={assigning ? orderMap.get(assigning.orderId)?.orderNo : undefined} onClose={() => setAssigning(null)} />
     </Screen>
   )
 }
@@ -164,6 +142,4 @@ const styles = StyleSheet.create({
   meta: { flexDirection: 'row', alignItems: 'flex-start', gap: space(1.5) },
   sub: { flex: 1, fontFamily: font.regular, fontSize: 13, color: color.muted },
   fail: { fontFamily: font.medium, fontSize: 13, color: color.danger, backgroundColor: tone.danger.bg, borderRadius: radius.sm, padding: space(2) },
-  courier: { flexDirection: 'row', alignItems: 'center', gap: space(3), minHeight: 56, paddingHorizontal: space(3), borderRadius: radius.md, borderWidth: 1, borderColor: color.border },
-  courierName: { fontFamily: font.semibold, fontSize: 15, color: color.fg },
 })

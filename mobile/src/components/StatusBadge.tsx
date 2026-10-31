@@ -1,5 +1,6 @@
-import { STATUS_LABEL, statusPhase } from '@swarapos/core/domain/order-status'
-import type { OrderStatus, StatusPhase } from '@swarapos/core/types'
+import { statusPhase } from '@swarapos/core/domain/order-status'
+import { staffStatusLabel } from '@swarapos/core/labels'
+import type { HandbackType, OrderStatus, StatusPhase } from '@swarapos/core/types'
 import { Ban, CircleCheck, Inbox, PackageCheck, ShieldCheck, TriangleAlert, WashingMachine, type LucideIcon } from 'lucide-react-native'
 import { Badge } from '@/ui/Badge'
 
@@ -16,7 +17,7 @@ export function statusIcon(status: OrderStatus): LucideIcon {
   return status === 'CANCELLED' ? Ban : PHASE_ICON[statusPhase(status)]
 }
 
-/** Status selalu ikon + label, tidak hanya warna. */
-export function StatusBadge({ status }: { status: OrderStatus }) {
-  return <Badge tone={statusPhase(status)} label={STATUS_LABEL[status]} icon={statusIcon(status)} />
+/** Status selalu ikon + label, tidak hanya warna. Beri `handback` agar order siap antar terbaca "Siap diantar". */
+export function StatusBadge({ status, handback = 'SELF_PICKUP' }: { status: OrderStatus; handback?: HandbackType }) {
+  return <Badge tone={statusPhase(status)} label={staffStatusLabel(status, handback)} icon={statusIcon(status)} />
 }

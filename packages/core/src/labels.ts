@@ -1,3 +1,4 @@
+import { STATUS_LABEL } from './domain/order-status'
 import { formatRupiah } from './format'
 import type {
   DeliveryTaskStatus,
@@ -118,6 +119,12 @@ const CUSTOMER_STATUS: Record<OrderStatus, string> = {
   CANCELLED: 'Dibatalkan',
   ON_HOLD: 'Ditunda sementara',
   ISSUE_REPORTED: 'Perlu konfirmasi',
+}
+
+/** Label status untuk staf; order siap yang akan diantar tidak boleh terbaca "Siap diambil". */
+export function staffStatusLabel(status: OrderStatus, handback: HandbackType): string {
+  if (status === 'READY_FOR_PICKUP' && handback === 'DELIVERY') return 'Siap diantar'
+  return STATUS_LABEL[status]
 }
 
 /** Label status untuk halaman lacak pelanggan (tanpa istilah internal). */

@@ -1,5 +1,6 @@
-import { it, expect } from 'vitest'
-import { customerStatusLabel, formatDueIn, formatLineDetail, formatQty } from './labels'
+import { describe, it, expect } from 'vitest'
+import { STATUS_LABEL } from './domain/order-status'
+import { customerStatusLabel, formatDueIn, formatLineDetail, formatQty, staffStatusLabel } from './labels'
 
 const now = new Date('2026-10-31T03:00:00Z')
 const at = (minutes: number) => new Date(now.getTime() + minutes * 60_000).toISOString()
@@ -31,4 +32,12 @@ it('formatQty memakai satuan yang sesuai', () => {
   expect(formatQty('PAIR', 1)).toBe('1 pasang')
   expect(formatQty('SQM', 1.25)).toBe('1,25 m²')
   expect(formatQty('ADDON', 1)).toBe('1×')
+})
+
+describe('staffStatusLabel', () => {
+  it('order siap yang akan diantar dibaca "Siap diantar", bukan "Siap diambil"', () => {
+    expect(staffStatusLabel('READY_FOR_PICKUP', 'DELIVERY')).toBe('Siap diantar')
+    expect(staffStatusLabel('READY_FOR_PICKUP', 'SELF_PICKUP')).toBe(STATUS_LABEL.READY_FOR_PICKUP)
+    expect(staffStatusLabel('IN_WASHING', 'DELIVERY')).toBe(STATUS_LABEL.IN_WASHING)
+  })
 })
