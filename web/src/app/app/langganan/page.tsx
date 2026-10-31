@@ -138,7 +138,7 @@ export default function LanggananPage() {
                   {invoice.status === 'UNDER_REVIEW' && (
                     <p className="flex gap-2 rounded-xl bg-primary-soft px-4 py-3 text-sm text-fg">
                       <Info className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-                      Bukti sedang direview. Bukti salah? Anda boleh mengunggah ulang; bukti lama tetap tersimpan.
+                      Bukti sedang direview. Bukti salah? Unggah yang baru — bukti baru menggantikan yang sedang direview, dan riwayatnya tetap tersimpan.
                     </p>
                   )}
                   <div>

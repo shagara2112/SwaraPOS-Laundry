@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { canTransition } from '@/lib/domain/order-status'
 import { createSeed } from './seed'
-import { DEMO_STATE_VERSION, migratePersisted, parseStoredJson } from './state'
+import { DEMO_STATE_VERSION, isDemoStale, migratePersisted, parseStoredJson, shiftDemoTime } from './state'
 
 const now = new Date('2026-10-31T03:00:00Z')
 
@@ -46,5 +46,25 @@ describe('migratePersisted', () => {
   it('menerima state versi sekarang', () => {
     const s = createSeed(now)
     expect(migratePersisted(s, DEMO_STATE_VERSION)).toEqual(s)
+  })
+})
+
+describe('shiftDemoTime (review final)', () => {
+  it('menggeser semua waktu ISO dan now tanpa mengubah data lain', () => {
+    const s = createSeed(now)
+    const later = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+    const shifted = shiftDemoTime(s, later)
+    const delta = later.getTime() - now.getTime()
+    expect(shifted.now).toBe(later.toISOString())
+    expect(new Date(shifted.orders[0].createdAt).getTime() - new Date(s.orders[0].createdAt).getTime()).toBe(delta)
+    expect(new Date(shifted.platform.audit[0].at).getTime() - new Date(s.platform.audit[0].at).getTime()).toBe(delta)
+    expect(shifted.orders[0].orderNo).toBe(s.orders[0].orderNo)
+    expect(shifted.customers[0].name).toBe(s.customers[0].name)
+  })
+
+  it('isDemoStale setelah lebih dari 12 jam', () => {
+    const s = createSeed(now)
+    expect(isDemoStale(s, new Date(now.getTime() + 11 * 3600_000))).toBe(false)
+    expect(isDemoStale(s, new Date(now.getTime() + 13 * 3600_000))).toBe(true)
   })
 })

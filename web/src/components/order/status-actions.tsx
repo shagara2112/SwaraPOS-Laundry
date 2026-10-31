@@ -1,8 +1,8 @@
 'use client'
 
-import { Ban, CirclePause, TriangleAlert, type LucideIcon } from 'lucide-react'
+import { Ban, CirclePause, TriangleAlert, Truck, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button, ButtonLink } from '@/components/ui/button'
 import { nextStatuses, requiresReason, STATUS_LABEL } from '@/lib/domain/order-status'
 import { resumeTarget } from '@/lib/selectors'
 import { act } from '@/lib/store/act'
@@ -16,6 +16,8 @@ const EXCEPTION_META: Partial<Record<OrderStatus, { label: string; title: string
   CANCELLED: { label: 'Batalkan', title: 'Batalkan order', icon: Ban, placeholder: 'Contoh: pelanggan membatalkan' },
 }
 
+const COURIER_STATUSES: OrderStatus[] = ['PICKUP_ASSIGNED', 'PICKED_UP', 'DELIVERED']
+
 function forwardLabel(order: Order, to: OrderStatus): string {
   if (order.status === 'ON_HOLD' || order.status === 'ISSUE_REPORTED') return `Lanjutkan: ${STATUS_LABEL[to]}`
   if (order.status === 'READY_FOR_PICKUP' && to === 'COMPLETED') return 'Diambil pelanggan'
@@ -27,6 +29,9 @@ export function StatusActions({ order }: { order: Order }) {
   const [reasonFor, setReasonFor] = useState<OrderStatus | null>(null)
   const next = nextStatuses(order.status, resumeTarget(order))
   let forward = next.filter((s) => !requiresReason(s))
+  // Jemput dan serah-terima wajib lewat tugas kurir (dengan bukti), bukan tombol di sini.
+  const viaCourier = forward.filter((s) => COURIER_STATUSES.includes(s))
+  forward = forward.filter((s) => !COURIER_STATUSES.includes(s))
   if (order.status === 'QUALITY_CHECK') forward = []
   if (order.status === 'READY_FOR_PICKUP' && order.handback === 'SELF_PICKUP') forward = [...forward].reverse()
   const exceptions = next.filter(requiresReason)
@@ -43,6 +48,12 @@ export function StatusActions({ order }: { order: Order }) {
           {forwardLabel(order, to)}
         </Button>
       ))}
+      {viaCourier.length > 0 && (
+        <ButtonLink href="/app/pengantaran" variant={forward.length === 0 ? 'primary' : 'secondary'}>
+          <Truck aria-hidden />
+          {STATUS_LABEL[viaCourier[0]]} lewat Pickup & Antar
+        </ButtonLink>
+      )}
       {exceptions.map((to) => {
         const m = EXCEPTION_META[to]!
         return (

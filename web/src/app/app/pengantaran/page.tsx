@@ -94,6 +94,12 @@ export default function PengantaranPage() {
 
   const orderMap = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders])
   const tasks = allTasks.filter((t) => orderMap.has(t.orderId))
+  // Tugas terbuka hanya relevan selama order memang menunggu dijemput/diantar (bukan batal, ditahan, atau sudah lewat).
+  const relevant = (t: DeliveryTask) => {
+    const status = orderMap.get(t.orderId)?.status
+    return t.type === 'PICKUP' ? status === 'REQUESTED' || status === 'PICKUP_ASSIGNED' : status === 'OUT_FOR_DELIVERY'
+  }
+  const inGroup = (t: DeliveryTask, statuses: DeliveryTaskStatus[]) => statuses.includes(t.status) && (t.status === 'DONE' || relevant(t))
   const couriers = staff.filter((s) => s.role === 'COURIER' && s.outletId === activeOutletId)
   const courierName = (id?: string) => staff.find((s) => s.id === id)?.name
   const readyToDeliver = orders.filter(
@@ -138,14 +144,14 @@ export default function PengantaranPage() {
         value={tab}
         onChange={(v) => setTab(v as 'PICKUP' | 'DELIVERY')}
         items={[
-          { id: 'PICKUP', label: 'Jemput', count: tasks.filter((t) => t.type === 'PICKUP' && t.status !== 'DONE').length },
-          { id: 'DELIVERY', label: 'Antar', count: tasks.filter((t) => t.type === 'DELIVERY' && t.status !== 'DONE').length },
+          { id: 'PICKUP', label: 'Jemput', count: tasks.filter((t) => t.type === 'PICKUP' && t.status !== 'DONE' && relevant(t)).length },
+          { id: 'DELIVERY', label: 'Antar', count: tasks.filter((t) => t.type === 'DELIVERY' && t.status !== 'DONE' && relevant(t)).length },
         ]}
       />
 
       <div className="grid gap-6 xl:grid-cols-3">
         {GROUPS.map((group) => {
-          const list = ofType.filter((t) => group.statuses.includes(t.status))
+          const list = ofType.filter((t) => inGroup(t, group.statuses))
           return (
             <section key={group.id} aria-label={group.label}>
               <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-fg-muted">

@@ -183,3 +183,12 @@ describe('recordPayment & markWhatsApp', () => {
     expect(sent.value.whatsapp[0].state).toBe('SENT')
   })
 })
+
+describe('idempotensi createOrder (review final)', () => {
+  it('idempotencyKey yang sama tidak membuat order ganda', () => {
+    const first = ok(createOrder(s0, { ...walkIn, idempotencyKey: 'draft-1' }, actor, now))
+    const again = ok(createOrder(first.state, { ...walkIn, idempotencyKey: 'draft-1' }, actor, now))
+    expect(again.value.id).toBe(first.value.id)
+    expect(again.state.orders.length).toBe(first.state.orders.length)
+  })
+})

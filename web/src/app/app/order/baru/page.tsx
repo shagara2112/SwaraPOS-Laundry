@@ -12,8 +12,9 @@ import { OrderSummary } from '@/components/cashier/order-summary'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { formatRupiah, parseDecimalID } from '@/lib/format'
+import { formatRupiah, parseDecimalID, parseRupiahID } from '@/lib/format'
 import { haversineKm, quoteDelivery } from '@/lib/domain/delivery-zone'
+import { newId } from '@/lib/ids'
 import { calculateTotals, estimateDueAt, lineTotal } from '@/lib/domain/pricing'
 import { formatLineDetail } from '@/lib/labels'
 import { act } from '@/lib/store/act'
@@ -35,26 +36,31 @@ type Draft = {
   express: boolean
   conditions: string[]
   manualKm: string
+  /** Kunci idempotensi draf: simpan ganda (double-click, Ctrl+Enter) tetap satu order. */
+  key: string
 }
 
-const EMPTY: Draft = {
-  customerId: null,
-  intake: 'DROP_OFF',
-  handback: 'SELF_PICKUP',
-  lines: [],
-  addons: [],
-  express: false,
-  conditions: [],
-  manualKm: '',
+function emptyDraft(): Draft {
+  return {
+    customerId: null,
+    intake: 'DROP_OFF',
+    handback: 'SELF_PICKUP',
+    lines: [],
+    addons: [],
+    express: false,
+    conditions: [],
+    manualKm: '',
+    key: newId('draft'),
+  }
 }
 
 function readDraft(): Draft {
   try {
     const raw = localStorage.getItem(DRAFT_KEY)
-    return raw ? { ...EMPTY, ...JSON.parse(raw) } : EMPTY
+    return raw ? { ...emptyDraft(), ...JSON.parse(raw) } : emptyDraft()
   } catch {
     // Draf rusak atau penyimpanan diblokir: mulai dari kosong.
-    return EMPTY
+    return emptyDraft()
   }
 }
 
@@ -84,6 +90,8 @@ export default function KasirPage() {
   const [draft, setDraft] = useState<Draft>(readDraft)
   const [confirmed, setConfirmed] = useState(false)
   const [manualFee, setManualFee] = useState('')
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const update = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
 
   useEffect(() => {
@@ -110,7 +118,7 @@ export default function KasirPage() {
     ? Math.round(haversineKm(outlet, customer.location) * 10) / 10
     : parseDecimalID(draft.manualKm)
   const quote = needsLogistics && distanceKm !== null ? quoteDelivery(distanceKm, zones) : null
-  const manualFeeValue = Number(manualFee.replace(/\D/g, ''))
+  const manualFeeValue = parseRupiahID(manualFee) ?? 0
   const legFee = (kind: 'pickupFee' | 'deliveryFee') =>
     quote?.status === 'OK' ? quote[kind] : quote?.status === 'NEEDS_CONFIRMATION' ? manualFeeValue : 0
 
@@ -132,7 +140,8 @@ export default function KasirPage() {
   if (quote?.status === 'NEEDS_CONFIRMATION' && (!confirmed || !(manualFeeValue > 0))) blockers.push('Konfirmasi area di luar zona & isi biaya')
 
   const save = () => {
-    if (blockers.length > 0 || !customer) return
+    // Penahan double-click; kunci draf di createOrder menjaga idempotensi di level data.
+    if (blockers.length > 0 || !customer || savingRef.current) return
     const result = act(
       (s) =>
         createOrder(
@@ -148,6 +157,7 @@ export default function KasirPage() {
             pickupFee: totals.pickupFee,
             deliveryFee: totals.deliveryFee,
             distanceKm: distanceKm ?? undefined,
+            idempotencyKey: draft.key,
           },
           s.tenantActor,
           new Date(),
@@ -155,6 +165,8 @@ export default function KasirPage() {
       'Order tersimpan',
     )
     if (result.ok) {
+      savingRef.current = true
+      setSaving(true)
       try {
         localStorage.removeItem(DRAFT_KEY)
       } catch {
@@ -201,7 +213,7 @@ export default function KasirPage() {
           <Button
             variant="ghost"
             onClick={() => {
-              setDraft(EMPTY)
+              setDraft(emptyDraft())
               setConfirmed(false)
               setManualFee('')
             }}
@@ -257,7 +269,7 @@ export default function KasirPage() {
         </div>
 
         <aside className="lg:sticky lg:top-20 lg:self-start">
-          <OrderSummary lines={summaryLines} totals={totals} expressPct={expressPct} dueAt={dueAt} blockers={blockers} onSave={save} />
+          <OrderSummary lines={summaryLines} totals={totals} expressPct={expressPct} dueAt={dueAt} blockers={blockers} saving={saving} onSave={save} />
         </aside>
       </div>
 
@@ -266,7 +278,7 @@ export default function KasirPage() {
           <p className="text-xs text-fg-subtle">Total</p>
           <p className="tabular text-lg font-bold text-fg">{formatRupiah(totals.total)}</p>
         </div>
-        <Button size="lg" disabled={blockers.length > 0} onClick={save}>
+        <Button size="lg" disabled={blockers.length > 0 || saving} onClick={save}>
           Simpan order
         </Button>
       </div>

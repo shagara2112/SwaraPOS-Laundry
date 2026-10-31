@@ -17,6 +17,7 @@ import type {
   SubscriptionInvoice,
 } from '@/lib/types'
 
+// Naikkan versi setiap kali bentuk DemoState berubah: migratePersisted hanya memeriksa kerangka atas.
 export const DEMO_STATE_VERSION = 1
 
 export interface OutletPaymentMethod {
@@ -79,6 +80,29 @@ export function appendAudit(state: DemoState, entry: Omit<AuditEntry, 'id'>): De
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
+
+const STALE_AFTER_MS = 12 * 60 * 60 * 1000
+const ISO_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/
+
+/** Data demo tersimpan dianggap basi bila dibuat lebih dari 12 jam lalu. */
+export function isDemoStale(state: DemoState, now: Date): boolean {
+  return now.getTime() - new Date(state.now).getTime() > STALE_AFTER_MS
+}
+
+/**
+ * Geser semua waktu ISO di state sejauh selisih `state.now` ke `now`, supaya pengunjung yang kembali
+ * tidak melihat KPI "hari ini" kosong dan semua order terlambat. Nomor order (berisi tanggal) tidak diubah.
+ */
+export function shiftDemoTime(state: DemoState, now: Date): DemoState {
+  const delta = now.getTime() - new Date(state.now).getTime()
+  const shift = (value: unknown): unknown => {
+    if (typeof value === 'string') return ISO_DATETIME.test(value) ? new Date(new Date(value).getTime() + delta).toISOString() : value
+    if (Array.isArray(value)) return value.map(shift)
+    if (isObject(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, shift(v)]))
+    return value
+  }
+  return { ...(shift(state) as DemoState), now: now.toISOString() }
+}
 
 /** Baca isi localStorage tanpa melempar error; JSON rusak dianggap kosong agar seed baru dipakai. */
 export function parseStoredJson(raw: string | null): unknown {

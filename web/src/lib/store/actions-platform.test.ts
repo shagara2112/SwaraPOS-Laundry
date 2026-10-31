@@ -149,3 +149,23 @@ describe('tenant & konfigurasi platform', () => {
     expect(plan.state.platform.audit.at(-1)?.action).toBe('plan.updated')
   })
 })
+
+describe('bukti ganda (review final)', () => {
+  it('bukti baru menggantikan bukti yang masih menunggu review', () => {
+    const first = submit(s0)
+    const second = submit(first.state)
+    const forInvoice = second.state.platform.submissions.filter((x) => x.invoiceId === inv.id)
+    expect(forInvoice.map((x) => x.status)).toEqual(['REJECTED', 'UNDER_REVIEW'])
+    expect(forInvoice[0].reviewNote).toContain('Diganti bukti baru')
+  })
+
+  it('review ditolak bila invoice sudah lunas', () => {
+    const s1 = submit(s0)
+    const paidState: DemoState = {
+      ...s1.state,
+      platform: { ...s1.state.platform, invoices: s1.state.platform.invoices.map((i) => (i.id === inv.id ? { ...i, status: 'PAID' as const } : i)) },
+    }
+    expect(reviewSubmission(paidState, s1.value.id, 'REJECTED', 'Duplikat', admin, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(reviewSubmission(paidState, s1.value.id, 'APPROVED', '', admin, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+  })
+})

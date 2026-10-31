@@ -111,3 +111,36 @@ describe('tugas antar-jemput', () => {
     expect(done.state.orders.find((o) => o.id === ready.id)?.status).toBe('DELIVERED')
   })
 })
+
+describe('sinkron tugas antar-jemput dengan order (review final)', () => {
+  const requested = s0.orders.find((o) => o.status === 'REQUESTED' && o.outletId === 'o-kmg')!
+  const pickupTask = s0.deliveryTasks.find((t) => t.orderId === requested.id && t.type === 'PICKUP')!
+
+  it('membatalkan order menutup tugas jemput yang masih terbuka', () => {
+    const { state } = ok(transitionOrder(s0, requested.id, 'CANCELLED', { reason: 'Pelanggan batal' }, actor, now))
+    const task = state.deliveryTasks.find((t) => t.id === pickupTask.id)!
+    expect(task.status).toBe('FAILED')
+    expect(task.failReason).toContain('dibatalkan')
+  })
+
+  it('pelanggan mengantar sendiri menutup tugas jemput', () => {
+    const { state } = ok(transitionOrder(s0, requested.id, 'RECEIVED', {}, actor, now))
+    expect(state.deliveryTasks.find((t) => t.id === pickupTask.id)!.status).toBe('FAILED')
+  })
+
+  it('kurir tidak bisa ditugaskan untuk order yang dibatalkan', () => {
+    const cancelled = s0.orders.find((o) => o.status === 'CANCELLED')!
+    const task = s0.deliveryTasks.find((t) => t.orderId === cancelled.id)!
+    expect(assignCourier(s0, task.id, 'st-bayu', actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+  })
+
+  it('tugas selesai ditolak bila order tidak bisa ikut berpindah', () => {
+    const out = s0.orders.find((o) => o.status === 'OUT_FOR_DELIVERY')!
+    const task = s0.deliveryTasks.find((t) => t.orderId === out.id && t.type === 'DELIVERY')!
+    const held = ok(transitionOrder(s0, out.id, 'ON_HOLD', { reason: 'Alamat salah' }, actor, now)).state
+    expect(updateDeliveryTask(held, task.id, 'DONE', { proof: { receiverName: 'Putri', method: 'PHOTO' } }, actor, now)).toEqual({
+      ok: false,
+      error: 'NOT_ALLOWED',
+    })
+  })
+})

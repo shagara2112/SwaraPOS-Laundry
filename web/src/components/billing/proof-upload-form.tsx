@@ -7,7 +7,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { validateProofFile } from '@/lib/domain/proof-file'
-import { formatRupiah } from '@/lib/format'
+import { formatRupiah, parseRupiahID } from '@/lib/format'
 import { act } from '@/lib/store/act'
 import { submitSubscriptionProof } from '@/lib/store/actions-platform'
 import type { PaymentInstruction, SubscriptionInvoice } from '@/lib/types'
@@ -27,7 +27,8 @@ export function ProofUploadForm({ invoice, instruction }: { invoice: Subscriptio
   const [fileError, setFileError] = useState<string | null>(null)
   const [amount, setAmount] = useState(String(invoice.amount))
   const [note, setNote] = useState('')
-  const amountValue = Number(amount.replace(/\D/g, ''))
+  const amountValue = parseRupiahID(amount) ?? 0
+  const amountError = amount.trim() !== '' && parseRupiahID(amount) === null ? 'Isi nominal rupiah bulat, contoh 598000 atau 598.000.' : undefined
   const mismatch = amountValue > 0 && amountValue !== invoice.amount
 
   const pick = (f: File | undefined) => {
@@ -91,8 +92,8 @@ export function ProofUploadForm({ invoice, instruction }: { invoice: Subscriptio
           onChange={(e) => pick(e.target.files?.[0])}
         />
       </Field>
-      <Field label="Nominal yang dibayar (Rp)" htmlFor="proof-amount" required>
-        <Input id="proof-amount" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} className="tabular" />
+      <Field label="Nominal yang dibayar (Rp)" htmlFor="proof-amount" required error={amountError}>
+        <Input id="proof-amount" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} className="tabular" aria-invalid={!!amountError} />
       </Field>
       {mismatch && (
         <p className="flex gap-2 rounded-xl bg-phase-qc-soft px-3 py-2.5 text-sm text-phase-qc">

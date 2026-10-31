@@ -158,6 +158,8 @@ export interface Order {
   dueAt: string
   createdAt: string
   version: number
+  /** Kunci draf kasir; retry/double-click dengan kunci sama tidak membuat order baru. */
+  idempotencyKey?: string
 }
 
 export interface Staff {

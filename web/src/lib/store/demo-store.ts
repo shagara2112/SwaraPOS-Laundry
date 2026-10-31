@@ -3,7 +3,9 @@ import { persist, type PersistStorage, type StorageValue } from 'zustand/middlew
 import { createSeed } from './seed'
 import {
   DEMO_STATE_VERSION,
+  isDemoStale,
   migratePersisted,
+  shiftDemoTime,
   parseStoredJson,
   type ActionResult,
   type DemoState,
@@ -70,7 +72,9 @@ export const useDemo = create<DemoStore>()(
       migrate: (persisted, version) => migratePersisted(persisted, version) ?? createSeed(new Date()),
       merge: (persisted, current) => {
         const valid = migratePersisted(persisted, DEMO_STATE_VERSION)
-        return valid ? { ...current, ...valid } : current
+        if (!valid) return current
+        const now = new Date()
+        return { ...current, ...(isDemoStale(valid, now) ? shiftDemoTime(valid, now) : valid) }
       },
     },
   ),

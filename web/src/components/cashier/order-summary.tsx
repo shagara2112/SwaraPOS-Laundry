@@ -13,6 +13,7 @@ export function OrderSummary({
   expressPct,
   dueAt,
   blockers,
+  saving = false,
   onSave,
 }: {
   lines: SummaryLine[]
@@ -20,6 +21,7 @@ export function OrderSummary({
   expressPct: number
   dueAt: Date | null
   blockers: string[]
+  saving?: boolean
   onSave: () => void
 }) {
   return (
@@ -87,7 +89,7 @@ export function OrderSummary({
             ))}
           </ul>
         )}
-        <Button size="lg" className="w-full" disabled={blockers.length > 0} onClick={onSave}>
+        <Button size="lg" className="w-full" disabled={blockers.length > 0 || saving} onClick={onSave}>
           <Save aria-hidden />
           Simpan order
           <kbd className="ml-1 hidden rounded bg-white/20 px-1.5 font-mono text-[11px] lg:inline">Ctrl ↵</kbd>

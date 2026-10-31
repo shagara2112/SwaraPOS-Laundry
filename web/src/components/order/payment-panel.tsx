@@ -9,7 +9,7 @@ import { Dialog } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { formatDateTime, formatRupiah } from '@/lib/format'
+import { formatDateTime, formatRupiah, parseRupiahID } from '@/lib/format'
 import { PAYMENT_METHOD_LABEL, PAYMENT_STATUS } from '@/lib/labels'
 import { amountDue, paidAmount } from '@/lib/selectors'
 import { act } from '@/lib/store/act'
@@ -19,7 +19,10 @@ import type { Order, OrderPaymentMethod } from '@/lib/types'
 function RecordPaymentDialog({ order, open, onClose }: { order: Order; open: boolean; onClose: () => void }) {
   const [method, setMethod] = useState<OrderPaymentMethod>('CASH')
   const [amount, setAmount] = useState(String(amountDue(order)))
-  const value = Number(amount.replace(/\D/g, ''))
+  const parsed = parseRupiahID(amount)
+  const due = amountDue(order)
+  const error = amount.trim() === '' ? undefined : parsed === null ? 'Isi nominal rupiah bulat, contoh 20000 atau 20.000.' : parsed > due ? `Melebihi sisa tagihan ${formatRupiah(due)}.` : undefined
+  const value = parsed !== null && parsed <= due ? parsed : 0
 
   const save = () => {
     const r = act((s) => recordPayment(s, order.id, { method, amount: value }, s.tenantActor, new Date()), 'Pembayaran tercatat')
@@ -54,8 +57,8 @@ function RecordPaymentDialog({ order, open, onClose }: { order: Order; open: boo
             ))}
           </Select>
         </Field>
-        <Field label="Nominal (Rp)" htmlFor="pay-amount" hint="Transfer dan QRIS diverifikasi manual ke rekening/QRIS outlet.">
-          <Input id="pay-amount" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} className="tabular" />
+        <Field label="Nominal (Rp)" htmlFor="pay-amount" error={error} hint="Transfer dan QRIS diverifikasi manual ke rekening/QRIS outlet.">
+          <Input id="pay-amount" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} className="tabular" aria-invalid={!!error} />
         </Field>
       </div>
     </Dialog>

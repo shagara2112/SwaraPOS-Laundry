@@ -53,8 +53,14 @@ export function submitSubscriptionProof(
     proof: { fileName: input.file.name, fileType: input.file.type, fileSize: input.file.size },
   }
 
+  // Bukti baru menggantikan bukti yang masih menunggu untuk tagihan yang sama (riwayat tetap tersimpan).
+  const superseded = s.platform.submissions.map((x) =>
+    x.invoiceId === invoiceId && (x.status === 'UNDER_REVIEW' || x.status === 'AMOUNT_MISMATCH_REVIEW')
+      ? { ...x, status: 'REJECTED' as const, reviewedBy: actor, reviewedAt: at, reviewNote: 'Diganti bukti baru dari tenant.' }
+      : x,
+  )
   const state = withPlatform(s, {
-    submissions: [...s.platform.submissions, submission],
+    submissions: [...superseded, submission],
     invoices: s.platform.invoices.map((i) => (i.id === invoiceId ? { ...i, status: 'UNDER_REVIEW' } : i)),
   })
   return {
@@ -86,6 +92,8 @@ export function reviewSubmission(
   if (submission.status !== 'UNDER_REVIEW' && submission.status !== 'AMOUNT_MISMATCH_REVIEW') {
     return fail('NOT_ALLOWED')
   }
+  // Tagihan yang sudah lunas tidak boleh diturunkan atau dicap ulang.
+  if (invoice.status === 'PAID') return fail('NOT_ALLOWED')
   const reviewNote = note.trim()
   const needsNote = decision === 'REJECTED' || submission.status === 'AMOUNT_MISMATCH_REVIEW'
   if (needsNote && !reviewNote) return fail('REASON_REQUIRED')

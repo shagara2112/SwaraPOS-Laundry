@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { parseRupiahID } from '@/lib/format'
 import { act } from '@/lib/store/act'
 import { updatePlan } from '@/lib/store/actions-platform'
 import { useDemo } from '@/lib/store/demo-store'
@@ -17,7 +18,10 @@ function PlanEditor({ plan, allFeatures }: { plan: Plan; allFeatures: string[] }
   const [orders, setOrders] = useState(String(plan.limits.ordersPerMonth))
   const [staff, setStaff] = useState(String(plan.limits.staff))
   const [features, setFeatures] = useState(plan.features)
-  const num = (v: string) => Number(v.replace(/\D/g, ''))
+  const priceValue = parseRupiahID(price)
+  const ordersValue = parseRupiahID(orders)
+  const staffValue = parseRupiahID(staff)
+  const invalid = priceValue === null || !ordersValue || !staffValue
 
   return (
     <Card>
@@ -50,14 +54,16 @@ function PlanEditor({ plan, allFeatures }: { plan: Plan; allFeatures: string[] }
             ))}
           </div>
         </fieldset>
+        {invalid && <p className="text-sm font-medium text-danger">Harga harus angka bulat; limit order dan staf harus lebih dari 0.</p>}
         <Button
+          disabled={invalid}
           onClick={() =>
             act(
               (s) =>
                 updatePlan(
                   s,
                   plan.code,
-                  { pricePerOutletMonth: num(price), limits: { ordersPerMonth: num(orders), staff: num(staff) }, features: allFeatures.filter((f) => features.includes(f)) },
+                  { pricePerOutletMonth: priceValue!, limits: { ordersPerMonth: ordersValue!, staff: staffValue! }, features: allFeatures.filter((f) => features.includes(f)) },
                   s.adminActor,
                   new Date(),
                 ),

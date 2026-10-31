@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatRupiah, formatDateTime, formatDate, formatWeight, parseDecimalID } from './format'
+import { formatRupiah, formatDateTime, formatDate, formatWeight, parseDecimalID, parseRupiahID } from './format'
 
 describe('formatRupiah', () => {
   it('memakai titik ribuan tanpa spasi', () => {
@@ -34,5 +34,22 @@ describe('parseDecimalID', () => {
     expect(parseDecimalID('')).toBeNull()
     expect(parseDecimalID('abc')).toBeNull()
     expect(parseDecimalID('-1')).toBeNull()
+  })
+})
+
+describe('parseRupiahID (review final)', () => {
+  it('menerima angka bulat dengan titik ribuan atau prefix Rp', () => {
+    expect(parseRupiahID('7500')).toBe(7500)
+    expect(parseRupiahID('7.500')).toBe(7500)
+    expect(parseRupiahID('Rp 12.500')).toBe(12500)
+    expect(parseRupiahID(' 1.234.567 ')).toBe(1234567)
+  })
+  it('menolak huruf, negatif, desimal, dan pengelompokan salah', () => {
+    expect(parseRupiahID('abc')).toBeNull()
+    expect(parseRupiahID('-1')).toBeNull()
+    expect(parseRupiahID('7500,5')).toBeNull()
+    expect(parseRupiahID('12.500,50')).toBeNull()
+    expect(parseRupiahID('12.50')).toBeNull()
+    expect(parseRupiahID('')).toBeNull()
   })
 })

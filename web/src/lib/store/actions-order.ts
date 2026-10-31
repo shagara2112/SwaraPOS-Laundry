@@ -32,6 +32,8 @@ export type NewOrderInput = {
   channel?: OrderChannel
   /** Jarak manual dari kasir bila pelanggan belum punya titik lokasi. */
   distanceKm?: number
+  /** TDD §8: create order wajib idempoten terhadap retry dan double-click. */
+  idempotencyKey?: string
 }
 
 const EXCEPTION_STATUSES: OrderStatus[] = ['ON_HOLD', 'ISSUE_REPORTED', 'CANCELLED']
@@ -74,6 +76,10 @@ export function createOrder(
   actor: Actor,
   now: Date,
 ): ActionResult<Order> {
+  if (input.idempotencyKey) {
+    const existing = s.orders.find((o) => o.idempotencyKey === input.idempotencyKey)
+    if (existing) return { ok: true, state: s, value: existing }
+  }
   const outlet = s.outlets.find((o) => o.id === input.outletId)
   const customer = s.customers.find((c) => c.id === input.customerId)
   if (!outlet || !customer) return fail('NOT_FOUND')
@@ -132,6 +138,7 @@ export function createOrder(
     ).toISOString(),
     createdAt: at,
     version: 1,
+    idempotencyKey: input.idempotencyKey,
   }
 
   const tasks: DeliveryTask[] =
@@ -207,6 +214,24 @@ export function transitionOrder(
       fee: order.totals.deliveryFee,
     }
     state = { ...state, deliveryTasks: [...state.deliveryTasks, task] }
+  }
+
+  // Tugas kurir yang tidak lagi relevan ditutup, supaya tidak muncul di daftar "Perlu ditugaskan".
+  const closeReason =
+    to === 'CANCELLED'
+      ? 'Order dibatalkan'
+      : to === 'RECEIVED' && (order.status === 'REQUESTED' || order.status === 'PICKUP_ASSIGNED')
+        ? 'Pelanggan mengantar sendiri ke outlet'
+        : undefined
+  if (closeReason) {
+    state = {
+      ...state,
+      deliveryTasks: state.deliveryTasks.map((t) =>
+        t.orderId === order.id && t.status !== 'DONE' && t.status !== 'FAILED' && (to === 'CANCELLED' || t.type === 'PICKUP')
+          ? { ...t, status: 'FAILED', failReason: closeReason }
+          : t,
+      ),
+    }
   }
 
   if (EXCEPTION_STATUSES.includes(to)) {

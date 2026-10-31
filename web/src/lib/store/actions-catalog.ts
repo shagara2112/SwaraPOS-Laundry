@@ -100,6 +100,10 @@ export function assignCourier(s: DemoState, taskId: string, courierId: string, a
   const courier = s.staff.find((x) => x.id === courierId && x.role === 'COURIER')
   if (!task || !courier) return fail('NOT_FOUND')
   if (task.status === 'DONE') return fail('NOT_ALLOWED')
+  // Kurir hanya boleh dikirim bila order memang menunggu dijemput/diantar.
+  const orderStatus = s.orders.find((o) => o.id === task.orderId)?.status
+  const expected = task.type === 'PICKUP' ? ['REQUESTED', 'PICKUP_ASSIGNED'] : ['OUT_FOR_DELIVERY']
+  if (!orderStatus || !expected.includes(orderStatus)) return fail('NOT_ALLOWED')
 
   const updated: DeliveryTask = { ...task, courierId, status: 'ASSIGNED', failReason: undefined }
   let state = replaceTask(s, updated)
@@ -135,8 +139,10 @@ export function updateDeliveryTask(
 
   if (status === 'DONE') {
     const target = task.type === 'PICKUP' ? 'PICKED_UP' : 'DELIVERED'
+    // Serah-terima harus ikut memindahkan order; bila order sudah batal/ditahan, tugas tidak boleh selesai.
     const moved = transitionOrder(state, task.orderId, target, { note: `Diterima oleh ${updated.proof!.receiverName}` }, actor, now)
-    if (moved.ok) state = moved.state
+    if (!moved.ok) return fail('NOT_ALLOWED')
+    state = moved.state
   }
   if (status === 'FAILED') {
     state = audited(state, actor, now, 'delivery.failed', 'delivery_task', task.id, extra.failReason!.trim())

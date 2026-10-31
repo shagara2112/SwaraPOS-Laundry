@@ -6,7 +6,9 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
+import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/cn'
+import { parseRupiahID } from '@/lib/format'
 import { UNIT_SHORT } from '@/lib/labels'
 import { act } from '@/lib/store/act'
 import { setServiceActive, updateServicePrice } from '@/lib/store/actions-catalog'
@@ -17,8 +19,13 @@ function PriceCell({ service, outletId, outletCode }: { service: Service; outlet
   const current = service.prices[outletId] ?? 0
   const [value, setValue] = useState(String(current))
   const commit = () => {
-    const next = Number(value.replace(/\D/g, ''))
-    if (value.trim() === '' || next === current) {
+    const next = parseRupiahID(value)
+    if (next === null) {
+      toast('Harga harus angka rupiah bulat, contoh 7500 atau 7.500.', 'error')
+      setValue(String(current))
+      return
+    }
+    if (next === current) {
       setValue(String(current))
       return
     }
