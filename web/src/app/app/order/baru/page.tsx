@@ -2,59 +2,28 @@
 
 import { Eraser } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ConditionNotes } from '@/components/cashier/condition-notes'
 import { CustomerPicker, type NewCustomerInput } from '@/components/cashier/customer-picker'
 import { DeliveryQuoteCard } from '@/components/cashier/delivery-quote-card'
 import { FulfillmentPicker } from '@/components/cashier/fulfillment-picker'
-import { ItemEditor, type DraftLine } from '@/components/cashier/item-editor'
+import { ItemEditor } from '@/components/cashier/item-editor'
 import { OrderSummary } from '@/components/cashier/order-summary'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { formatRupiah, parseDecimalID, parseRupiahID } from '@swarapos/core/format'
-import { haversineKm, quoteDelivery } from '@swarapos/core/domain/delivery-zone'
-import { newId } from '@swarapos/core/ids'
-import { calculateTotals, estimateDueAt, lineTotal } from '@swarapos/core/domain/pricing'
-import { formatLineDetail } from '@swarapos/core/labels'
+import { emptyDraft, orderInputFromDraft, summarizeDraft, type OrderDraft } from '@swarapos/core/cashier'
+import { formatRupiah } from '@swarapos/core/format'
 import { act } from '@/lib/store/act'
 import { addCustomer } from '@swarapos/core/store/actions-catalog'
 import { createOrder } from '@swarapos/core/store/actions-order'
 import { useDemo } from '@/lib/store/demo-store'
 import { useActiveOutlet } from '@/lib/store/hooks'
-import type { HandbackType, IntakeType, Service } from '@swarapos/core/types'
 import { useNow } from '@/lib/use-now'
 
 const DRAFT_KEY = 'swarapos-kasir-draft'
 
-type Draft = {
-  customerId: string | null
-  intake: IntakeType
-  handback: HandbackType
-  lines: DraftLine[]
-  addons: string[]
-  express: boolean
-  conditions: string[]
-  manualKm: string
-  /** Kunci idempotensi draf: simpan ganda (double-click, Ctrl+Enter) tetap satu order. */
-  key: string
-}
-
-function emptyDraft(): Draft {
-  return {
-    customerId: null,
-    intake: 'DROP_OFF',
-    handback: 'SELF_PICKUP',
-    lines: [],
-    addons: [],
-    express: false,
-    conditions: [],
-    manualKm: '',
-    key: newId('draft'),
-  }
-}
-
-function readDraft(): Draft {
+function readDraft(): OrderDraft {
   try {
     const raw = localStorage.getItem(DRAFT_KEY)
     return raw ? { ...emptyDraft(), ...JSON.parse(raw) } : emptyDraft()
@@ -87,12 +56,12 @@ export default function KasirPage() {
 
   // Draf lokal (PRD: layar operasional tetap usable saat koneksi tidak stabil). Halaman ini
   // baru dirender setelah hidrasi store, jadi aman membaca localStorage saat inisialisasi.
-  const [draft, setDraft] = useState<Draft>(readDraft)
+  const [draft, setDraft] = useState<OrderDraft>(readDraft)
   const [confirmed, setConfirmed] = useState(false)
   const [manualFee, setManualFee] = useState('')
   const [saving, setSaving] = useState(false)
   const savingRef = useRef(false)
-  const update = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
+  const update = (patch: Partial<OrderDraft>) => setDraft((d) => ({ ...d, ...patch }))
 
   useEffect(() => {
     try {
@@ -103,67 +72,22 @@ export default function KasirPage() {
   }, [draft])
 
   const customer = customers.find((c) => c.id === draft.customerId)
-  const byId = useMemo(() => new Map(services.map((s) => [s.id, s])), [services])
-
-  const parsed = draft.lines.map((l) => ({ line: l, svc: byId.get(l.serviceId), qty: parseDecimalID(l.qtyText) }))
-  const valid: { svc: Service; qty: number }[] = [
-    ...parsed.filter((p): p is { line: DraftLine; svc: Service; qty: number } => !!p.svc && !!p.qty && p.qty > 0),
-    ...draft.addons.map((id) => ({ svc: byId.get(id)!, qty: 1 })).filter((p) => p.svc),
-  ]
-  const invalidLines = parsed.some((p) => p.line.qtyText.trim() !== '' && !(p.qty && p.qty > 0)) || parsed.some((p) => p.line.qtyText.trim() === '')
-
-  const legs = { pickup: draft.intake === 'PICKUP', delivery: draft.handback === 'DELIVERY' }
-  const needsLogistics = legs.pickup || legs.delivery
-  const distanceKm = customer?.location
-    ? Math.round(haversineKm(outlet, customer.location) * 10) / 10
-    : parseDecimalID(draft.manualKm)
-  const quote = needsLogistics && distanceKm !== null ? quoteDelivery(distanceKm, zones) : null
-  const manualFeeValue = parseRupiahID(manualFee) ?? 0
-  const legFee = (kind: 'pickupFee' | 'deliveryFee') =>
-    quote?.status === 'OK' ? quote[kind] : quote?.status === 'NEEDS_CONFIRMATION' ? manualFeeValue : 0
-
-  const totals = calculateTotals({
-    lines: valid.map((v) => ({ unit: v.svc.unit, unitPrice: v.svc.prices[outlet.id] ?? 0, qty: v.qty })),
-    express: draft.express,
-    expressSurchargePct: expressPct,
-    pickupFee: legs.pickup ? legFee('pickupFee') : 0,
-    deliveryFee: legs.delivery ? legFee('deliveryFee') : 0,
+  const summary = summarizeDraft({
+    draft,
+    customer,
+    outlet,
+    services,
+    zones,
+    expressPct,
+    outsideZone: { confirmed, feeText: manualFee },
+    now,
   })
-  const dueAt = valid.length > 0 ? estimateDueAt(now, valid.map((v) => v.svc.durationHours), draft.express) : null
-
-  const blockers: string[] = []
-  if (!customer) blockers.push('Pilih atau tambah pelanggan')
-  if (valid.length === 0 || !draft.lines.length) blockers.push('Tambah minimal satu layanan utama')
-  if (invalidLines) blockers.push('Lengkapi berat/jumlah setiap layanan')
-  if (needsLogistics && !customer?.address) blockers.push('Alamat pelanggan wajib untuk jemput/antar')
-  if (needsLogistics && distanceKm === null) blockers.push('Isi jarak dari outlet')
-  if (quote?.status === 'NEEDS_CONFIRMATION' && (!confirmed || !(manualFeeValue > 0))) blockers.push('Konfirmasi area di luar zona & isi biaya')
+  const { quote, legs, needsLogistics, totals, dueAt, blockers, summaryLines } = summary
 
   const save = () => {
     // Penahan double-click; kunci draf di createOrder menjaga idempotensi di level data.
     if (blockers.length > 0 || !customer || savingRef.current) return
-    const result = act(
-      (s) =>
-        createOrder(
-          s,
-          {
-            outletId: outlet.id,
-            customerId: customer.id,
-            intake: draft.intake,
-            handback: draft.handback,
-            express: draft.express,
-            items: valid.map((v) => ({ serviceId: v.svc.id, qty: v.qty })),
-            conditionNotes: draft.conditions,
-            pickupFee: totals.pickupFee,
-            deliveryFee: totals.deliveryFee,
-            distanceKm: distanceKm ?? undefined,
-            idempotencyKey: draft.key,
-          },
-          s.tenantActor,
-          new Date(),
-        ),
-      'Order tersimpan',
-    )
+    const result = act((s) => createOrder(s, orderInputFromDraft(draft, summary, outlet.id), s.tenantActor, new Date()), 'Order tersimpan')
     if (result.ok) {
       savingRef.current = true
       setSaving(true)
@@ -198,11 +122,6 @@ export default function KasirPage() {
     update({ customerId: r.value.id, manualKm: input.km })
     return true
   }
-
-  const summaryLines = valid.map((v) => {
-    const price = v.svc.prices[outlet.id] ?? 0
-    return { label: v.svc.name, detail: formatLineDetail(v.svc.unit, v.qty, price), total: lineTotal({ unit: v.svc.unit, unitPrice: price, qty: v.qty }) }
-  })
 
   return (
     <>

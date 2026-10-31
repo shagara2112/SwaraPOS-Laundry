@@ -6,9 +6,10 @@ import { cn } from '@/lib/cn'
 import { lineTotal } from '@swarapos/core/domain/pricing'
 import { formatRupiah, parseDecimalID } from '@swarapos/core/format'
 import { UNIT_SHORT } from '@swarapos/core/labels'
+import type { DraftLine } from '@swarapos/core/cashier'
 import type { Service } from '@swarapos/core/types'
 
-export type DraftLine = { key: string; serviceId: string; qtyText: string }
+export type { DraftLine } from '@swarapos/core/cashier'
 
 export function ItemEditor({
   services,
