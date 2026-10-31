@@ -13,6 +13,8 @@ const MATRIX: Record<Action, Role[]> = {
   'delivery.update': ['OWNER', 'COURIER'],
   'delivery.assign': ['OWNER', 'CASHIER'],
   'customer.create': ['OWNER', 'CASHIER'],
+  'customer.update': ['OWNER', 'CASHIER'],
+  'customer.delete': ['OWNER', 'CASHIER'],
 }
 const ROLES: Role[] = ['OWNER', 'CASHIER', 'OPERATOR', 'QC', 'COURIER']
 

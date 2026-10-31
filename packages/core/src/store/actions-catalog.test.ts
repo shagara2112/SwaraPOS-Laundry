@@ -4,7 +4,9 @@ import { DEFAULT_ZONES } from '../domain/delivery-zone'
 import {
   addCustomer,
   assignCourier,
+  deleteCustomer,
   setServiceActive,
+  updateCustomer,
   updateDeliveryTask,
   updateServicePrice,
   updateZones,
@@ -41,6 +43,53 @@ describe('addCustomer', () => {
   it('nama kosong atau telepon tidak valid ditolak', () => {
     expect(addCustomer(s0, { name: ' ', phone: '081311112222' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
     expect(addCustomer(s0, { name: 'Budi', phone: '12' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+  })
+})
+
+describe('updateCustomer', () => {
+  const target = () => s0.customers[0]
+
+  it('mengubah nama, telepon, alamat, dan catatan (dirapikan) serta mencatat audit', () => {
+    const { state, value } = ok(updateCustomer(s0, target().id, { name: '  Sari H. ', phone: '0812 9999 0000', address: ' Jl. Baru 1 ', notes: ' ' }, actor, now))
+    expect(value).toMatchObject({ id: target().id, name: 'Sari H.', phone: '0812 9999 0000', address: 'Jl. Baru 1', notes: undefined })
+    expect(state.customers.find((c) => c.id === target().id)?.name).toBe('Sari H.')
+    expect(state.customers.length).toBe(s0.customers.length)
+    expect(state.platform.audit.at(-1)).toMatchObject({ action: 'customer.updated', entityId: target().id })
+  })
+
+  it('order lama tetap menunjuk pelanggan yang sama', () => {
+    const { state } = ok(updateCustomer(s0, target().id, { name: 'Nama Baru', phone: target().phone }, actor, now))
+    expect(state.orders.filter((o) => o.customerId === target().id).length).toBe(s0.orders.filter((o) => o.customerId === target().id).length)
+  })
+
+  it('nomor WhatsApp milik pelanggan lain ditolak (beda format pun)', () => {
+    const other = s0.customers[1]
+    const digits = other.phone.replace(/\D/g, '')
+    expect(updateCustomer(s0, target().id, { name: 'X', phone: `+62 ${digits.slice(1)}` }, actor, now)).toEqual({ ok: false, error: 'DUPLICATE' })
+  })
+
+  it('nama kosong, telepon tidak valid, atau pelanggan tidak ada ditolak', () => {
+    expect(updateCustomer(s0, target().id, { name: ' ', phone: target().phone }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(updateCustomer(s0, target().id, { name: 'X', phone: '12' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(updateCustomer(s0, 'cus-tidak-ada', { name: 'X', phone: '081311112222' }, actor, now)).toEqual({ ok: false, error: 'NOT_FOUND' })
+  })
+})
+
+describe('deleteCustomer', () => {
+  it('pelanggan tanpa order bisa dihapus dan tercatat di audit', () => {
+    const added = ok(addCustomer(s0, { name: 'Salah Input', phone: '0813 7777 8888' }, actor, now))
+    const { state } = ok(deleteCustomer(added.state, added.value.id, actor, now))
+    expect(state.customers.some((c) => c.id === added.value.id)).toBe(false)
+    expect(state.platform.audit.at(-1)).toMatchObject({ action: 'customer.deleted', entityId: added.value.id })
+  })
+
+  it('pelanggan yang punya order tidak bisa dihapus agar riwayat tetap utuh', () => {
+    const withOrders = s0.customers.find((c) => s0.orders.some((o) => o.customerId === c.id))!
+    expect(deleteCustomer(s0, withOrders.id, actor, now)).toEqual({ ok: false, error: 'IN_USE' })
+  })
+
+  it('pelanggan tidak ada ditolak', () => {
+    expect(deleteCustomer(s0, 'cus-tidak-ada', actor, now)).toEqual({ ok: false, error: 'NOT_FOUND' })
   })
 })
 

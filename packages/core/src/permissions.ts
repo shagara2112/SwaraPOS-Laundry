@@ -13,6 +13,8 @@ export type Action =
   | 'delivery.update'
   | 'delivery.assign'
   | 'customer.create'
+  | 'customer.update'
+  | 'customer.delete'
 
 // Spec Android §3. Dipakai UI untuk menampilkan/menyembunyikan aksi; backend nanti menegakkan hal yang sama.
 const ALLOWED: Record<Action, Role[]> = {
@@ -26,6 +28,8 @@ const ALLOWED: Record<Action, Role[]> = {
   'delivery.update': ['OWNER', 'COURIER'],
   'delivery.assign': ['OWNER', 'CASHIER'],
   'customer.create': ['OWNER', 'CASHIER'],
+  'customer.update': ['OWNER', 'CASHIER'],
+  'customer.delete': ['OWNER', 'CASHIER'],
 }
 
 export function can(role: Role, action: Action): boolean {

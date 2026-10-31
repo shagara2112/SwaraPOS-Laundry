@@ -9,6 +9,8 @@ export const ERROR_MESSAGE: Record<ActionError, string> = {
   REASON_REQUIRED: 'Alasan atau catatan wajib diisi.',
   INVALID_TYPE: 'Format file harus JPG, PNG, atau PDF.',
   TOO_LARGE: 'Ukuran file harus di bawah 2 MB.',
+  DUPLICATE: 'Nomor WhatsApp ini sudah dipakai pelanggan lain.',
+  IN_USE: 'Pelanggan ini sudah punya order, jadi tidak bisa dihapus.',
 }
 
 /** Jalankan reducer lewat store, lalu tampilkan toast sukses atau pesan error. */

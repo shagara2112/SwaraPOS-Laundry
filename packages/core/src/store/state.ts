@@ -69,6 +69,8 @@ export type ActionError =
   | 'REASON_REQUIRED'
   | 'INVALID_TYPE'
   | 'TOO_LARGE'
+  | 'DUPLICATE'
+  | 'IN_USE'
 
 export type ActionResult<T = undefined> =
   | { ok: true; state: DemoState; value: T }

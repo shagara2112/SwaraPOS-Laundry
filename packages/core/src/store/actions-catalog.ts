@@ -35,6 +35,41 @@ function audited(s: DemoState, actor: Actor, now: Date, action: string, entity: 
   return appendAudit(s, { at: now.toISOString(), actor, action, tenantId: s.tenant.id, entity, entityId, detail })
 }
 
+/** Ubah data pelanggan; satu nomor WhatsApp tetap milik satu pelanggan. Order lama tetap menunjuk pelanggan yang sama. */
+export function updateCustomer(
+  s: DemoState,
+  customerId: string,
+  input: { name: string; phone: string; address?: string; notes?: string },
+  actor: Actor,
+  now: Date,
+): ActionResult<Customer> {
+  const current = s.customers.find((c) => c.id === customerId)
+  if (!current) return fail('NOT_FOUND')
+  const name = input.name.trim()
+  const normalized = normalizePhoneID(input.phone)
+  if (!name || !normalized) return fail('NOT_ALLOWED')
+  if (s.customers.some((c) => c.id !== customerId && normalizePhoneID(c.phone) === normalized)) return fail('DUPLICATE')
+
+  const updated: Customer = {
+    ...current,
+    name,
+    phone: input.phone.trim(),
+    address: input.address?.trim() || undefined,
+    notes: input.notes?.trim() || undefined,
+  }
+  const state = { ...s, customers: s.customers.map((c) => (c.id === customerId ? updated : c)) }
+  return { ok: true, value: updated, state: audited(state, actor, now, 'customer.updated', 'customer', customerId, name) }
+}
+
+/** Hapus pelanggan yang salah input atau dobel. Pelanggan yang punya order tidak bisa dihapus agar riwayat order dan pembayaran tetap utuh. */
+export function deleteCustomer(s: DemoState, customerId: string, actor: Actor, now: Date): ActionResult {
+  const current = s.customers.find((c) => c.id === customerId)
+  if (!current) return fail('NOT_FOUND')
+  if (s.orders.some((o) => o.customerId === customerId)) return fail('IN_USE')
+  const state = { ...s, customers: s.customers.filter((c) => c.id !== customerId) }
+  return { ok: true, value: undefined, state: audited(state, actor, now, 'customer.deleted', 'customer', customerId, current.name) }
+}
+
 export function updateServicePrice(
   s: DemoState,
   serviceId: string,

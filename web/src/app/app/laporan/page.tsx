@@ -3,17 +3,18 @@
 import { Download, Repeat, UserPlus, Users, Wallet } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { PageHeader } from '@/components/layout/page-header'
-import { ColumnChart, ChartCard, HBarChart, type Datum } from '@/components/reports/bar-chart'
+import { ColumnChart, ChartCard, HBarChart } from '@/components/reports/bar-chart'
 import { Button } from '@/components/ui/button'
 import { KpiCard } from '@/components/ui/kpi-card'
 import { Select } from '@/components/ui/select'
 import { toast } from '@/components/ui/toast'
 import { toCsv } from '@/lib/csv'
+import { presetRange } from '@swarapos/core/date-range'
 import { jakartaDateKey } from '@swarapos/core/domain/order-number'
 import { STATUS_LABEL } from '@swarapos/core/domain/order-status'
 import { formatDate, formatRupiah } from '@swarapos/core/format'
 import { CHANNEL_LABEL, PAYMENT_STATUS } from '@swarapos/core/labels'
-import { PRODUCTION_COLUMNS } from '@swarapos/core/production'
+import { buildReport } from '@swarapos/core/report'
 import { useDemo } from '@/lib/store/demo-store'
 import { useNow } from '@/lib/use-now'
 
@@ -30,63 +31,15 @@ export default function LaporanPage() {
   const [outletId, setOutletId] = useState('all')
 
   const report = useMemo(() => {
-    const start = now.getTime() - range * DAY
-    const scoped = orders.filter((o) => outletId === 'all' || o.outletId === outletId)
-    const inRange = scoped.filter((o) => new Date(o.createdAt).getTime() >= start && o.status !== 'CANCELLED')
-
-    const days: Datum[] = Array.from({ length: range }, (_, i) => {
-      const d = new Date(now.getTime() - (range - 1 - i) * DAY)
-      const key = jakartaDateKey(d)
-      return {
-        label: formatDate(d.toISOString()).replace(/ \d{4}$/, ''),
-        value: inRange.filter((o) => jakartaDateKey(new Date(o.createdAt)) === key).reduce((s, o) => s + o.totals.total, 0),
-      }
-    })
-
-    const byService: Datum[] = services
-      .map((svc) => ({
-        label: svc.name,
-        value: inRange.flatMap((o) => o.items).filter((i) => i.serviceId === svc.id).reduce((s, i) => s + i.total, 0),
-      }))
-      .filter((d) => d.value > 0)
-      .sort((a, b) => b.value - a.value)
-
-    const byChannel: Datum[] = (Object.keys(CHANNEL_LABEL) as (keyof typeof CHANNEL_LABEL)[]).map((ch) => {
-      const list = inRange.filter((o) => o.channel === ch)
-      return { label: CHANNEL_LABEL[ch], value: list.reduce((s, o) => s + o.totals.total, 0), hint: `${list.length} order` }
-    })
-
-    const stageEvents = scoped.flatMap((o) => o.history).filter((e) => e.from !== e.to && new Date(e.at).getTime() >= start)
-    const byStage: Datum[] = PRODUCTION_COLUMNS.map((c) => ({ label: c.label, value: stageEvents.filter((e) => c.statuses.includes(e.to)).length }))
-
-    const activeIds = new Set(inRange.map((o) => o.customerId))
-    const firstOrder = new Map<string, number>()
-    const orderCount = new Map<string, number>()
-    for (const o of scoped) {
-      const t = new Date(o.createdAt).getTime()
-      firstOrder.set(o.customerId, Math.min(firstOrder.get(o.customerId) ?? Infinity, t))
-      orderCount.set(o.customerId, (orderCount.get(o.customerId) ?? 0) + 1)
-    }
-    const newCustomers = [...activeIds].filter((id) => (firstOrder.get(id) ?? 0) >= start).length
-    const repeat = [...activeIds].filter((id) => (orderCount.get(id) ?? 0) >= 2).length
-
-    return {
-      inRange,
-      total: inRange.reduce((s, o) => s + o.totals.total, 0),
-      days,
-      byService,
-      byChannel,
-      byStage,
-      active: activeIds.size,
-      newCustomers,
-      repeat,
-    }
+    // Rentang hari WIB penuh: N hari terakhir termasuk hari ini.
+    const today = presetRange('today', now)!
+    return buildReport({ orders, services }, { range: { from: today.from - (range - 1) * DAY, to: today.to }, outletId, now })
   }, [orders, services, outletId, range, now])
 
   const exportCsv = () => {
     const name = (id: string) => customers.find((c) => c.id === id)?.name ?? ''
     const csv = toCsv(
-      report.inRange.map((o) => ({
+      report.orders.map((o) => ({
         'No. order': o.orderNo,
         Tanggal: formatDate(o.createdAt),
         Pelanggan: name(o.customerId),
@@ -104,7 +57,7 @@ export default function LaporanPage() {
     a.download = `order-${jakartaDateKey(now)}-${range}hari.csv`
     a.click()
     URL.revokeObjectURL(url)
-    toast(`${report.inRange.length} order diekspor ke CSV`)
+    toast(`${report.orders.length} order diekspor ke CSV`)
   }
 
   return (
@@ -127,7 +80,7 @@ export default function LaporanPage() {
                 </option>
               ))}
             </Select>
-            <Button variant="secondary" onClick={exportCsv} disabled={report.inRange.length === 0}>
+            <Button variant="secondary" onClick={exportCsv} disabled={report.orders.length === 0}>
               <Download aria-hidden />
               Export CSV
             </Button>
@@ -136,7 +89,7 @@ export default function LaporanPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <KpiCard label="Nilai order" value={formatRupiah(report.total)} icon={Wallet} hint={`${report.inRange.length} order`} />
+        <KpiCard label="Nilai order" value={formatRupiah(report.total)} icon={Wallet} hint={`${report.orders.length} order`} />
         <KpiCard label="Pelanggan aktif" value={report.active} icon={Users} tone="cyan" />
         <KpiCard label="Pelanggan baru" value={report.newCustomers} icon={UserPlus} tone="success" hint="Order pertama di rentang ini" />
         <KpiCard
