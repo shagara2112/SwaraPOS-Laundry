@@ -1,4 +1,6 @@
-import type { OrderStatus } from '@/lib/types'
+import { nextStatuses, requiresReason } from '@/lib/domain/order-status'
+import { resumeTarget } from '@/lib/store/actions-order'
+import type { Order, OrderStatus } from '@/lib/types'
 
 /** Kolom papan produksi; beberapa status penerimaan digabung ke satu kolom. */
 export const PRODUCTION_COLUMNS: { id: string; label: string; statuses: OrderStatus[] }[] = [
@@ -12,3 +14,13 @@ export const PRODUCTION_COLUMNS: { id: string; label: string; statuses: OrderSta
 ]
 
 export const HOLD_STATUSES: OrderStatus[] = ['ON_HOLD', 'ISSUE_REPORTED']
+
+/** Status maju yang menjadi tombol utama. QC tidak punya tombol maju karena memakai checklist. */
+export function primaryNext(order: Order): OrderStatus | undefined {
+  if (order.status === 'QUALITY_CHECK') return undefined
+  const forward = nextStatuses(order.status, resumeTarget(order)).filter((s) => !requiresReason(s))
+  if (order.status === 'READY_FOR_PICKUP') {
+    return order.handback === 'DELIVERY' ? 'OUT_FOR_DELIVERY' : 'COMPLETED'
+  }
+  return forward[0]
+}
