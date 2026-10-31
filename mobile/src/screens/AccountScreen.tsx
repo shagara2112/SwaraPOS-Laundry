@@ -1,9 +1,10 @@
 import { ROLE_LABEL } from '@swarapos/core/labels'
 import Constants from 'expo-constants'
 import { router } from 'expo-router'
-import { LogOut, RotateCcw, Store, UserRound } from 'lucide-react-native'
+import { ExternalLink, LogOut, RotateCcw, Store, UserRound } from 'lucide-react-native'
 import { useState } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { Linking, StyleSheet, Text, View } from 'react-native'
+import { WEB_DASHBOARD_URL } from '@/lib/config'
 import { useDemo } from '@/store/demo-store'
 import { useActiveOutlet, useCurrentStaff } from '@/store/hooks'
 import { useSession } from '@/store/session-store'
@@ -40,6 +41,18 @@ export function AccountScreen() {
           <Text style={styles.meta}>{outlet.address}</Text>
         </View>
       </Card>
+
+      {role === 'OWNER' && (
+        <Card style={styles.web}>
+          <Text style={styles.outletName}>Dashboard web</Text>
+          <Text style={styles.meta}>Langganan, pengaturan outlet & staf, katalog layanan, dan laporan lengkap ada di dashboard web.</Text>
+          <Button
+            title="Buka dashboard web"
+            icon={ExternalLink}
+            onPress={() => Linking.openURL(WEB_DASHBOARD_URL).catch(() => toast('Browser tidak bisa dibuka di perangkat ini.', 'error'))}
+          />
+        </Card>
+      )}
 
       <View style={styles.actions}>
         <Button
@@ -85,6 +98,7 @@ const styles = StyleSheet.create({
   name: { fontFamily: font.bold, fontSize: 17, color: color.fg },
   meta: { marginTop: 2, fontFamily: font.regular, fontSize: 13, color: color.muted },
   outlet: { flexDirection: 'row', alignItems: 'flex-start', gap: space(3), marginTop: space(3) },
+  web: { gap: space(2), marginTop: space(3) },
   outletName: { fontFamily: font.semibold, fontSize: 15, color: color.fg },
   actions: { marginTop: space(6), gap: space(2) },
   version: { marginTop: space(8), textAlign: 'center', fontFamily: font.regular, fontSize: 12, color: color.subtle },

@@ -116,7 +116,7 @@ function NewOrderForm({ draft, setDraft }: { draft: OrderDraft; setDraft: (fn: (
   }
 
   const createCustomer = (input: NewCustomerInput): boolean => {
-    const r = act((s) => addCustomer(s, { name: input.name, phone: input.phone, address: input.address }, actor, new Date()), 'Pelanggan ditambahkan')
+    const r = act((s) => addCustomer(s, { name: input.name, phone: input.phone, address: input.address, notes: input.notes }, actor, new Date()), 'Pelanggan ditambahkan')
     if (!r.ok) return false
     update({ customerId: r.value.id, manualKm: input.km })
     return true

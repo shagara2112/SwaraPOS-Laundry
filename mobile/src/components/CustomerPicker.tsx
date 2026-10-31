@@ -8,9 +8,9 @@ import { Button } from '@/ui/Button'
 import { Sheet } from '@/ui/Sheet'
 import { TextField } from '@/ui/TextField'
 
-export type NewCustomerInput = { name: string; phone: string; address: string; km: string }
+export type NewCustomerInput = { name: string; phone: string; address: string; notes: string; km: string }
 
-const EMPTY: NewCustomerInput = { name: '', phone: '', address: '', km: '' }
+const EMPTY: NewCustomerInput = { name: '', phone: '', address: '', notes: '', km: '' }
 
 /** Cari pelanggan dengan nama atau digit nomor WhatsApp (minimal 3 digit). */
 export function searchCustomers(customers: Customer[], query: string): Customer[] {
@@ -20,14 +20,26 @@ export function searchCustomers(customers: Customer[], query: string): Customer[
   return customers.filter((c) => c.name.toLowerCase().includes(q) || (digits.length >= 3 && c.phone.replace(/\D/g, '').includes(digits)))
 }
 
-/** Lembar tambah pelanggan. `onCreate` mengembalikan `true` bila tersimpan. */
-export function CustomerFormSheet({ visible, onClose, onCreate, withDistance }: { visible: boolean; onClose: () => void; onCreate: (input: NewCustomerInput) => boolean; withDistance?: boolean }) {
-  const [draft, setDraft] = useState<NewCustomerInput>(EMPTY)
+/** Lembar tambah/ubah pelanggan. `onCreate` mengembalikan `true` bila tersimpan. Untuk ubah, pasang saat dibuka dengan `initial`. */
+export function CustomerFormSheet({
+  visible,
+  onClose,
+  onCreate,
+  withDistance,
+  initial,
+}: {
+  visible: boolean
+  onClose: () => void
+  onCreate: (input: NewCustomerInput) => boolean
+  withDistance?: boolean
+  initial?: NewCustomerInput
+}) {
+  const [draft, setDraft] = useState<NewCustomerInput>(initial ?? EMPTY)
   const [touched, setTouched] = useState(false)
   const nameError = touched && !draft.name.trim() ? 'Nama wajib diisi.' : undefined
   const phoneError = touched && !normalizePhoneID(draft.phone) ? 'Nomor WhatsApp tidak valid.' : undefined
   const close = () => {
-    setDraft(EMPTY)
+    setDraft(initial ?? EMPTY)
     setTouched(false)
     onClose()
   }
@@ -35,10 +47,10 @@ export function CustomerFormSheet({ visible, onClose, onCreate, withDistance }: 
     <Sheet
       visible={visible}
       onClose={close}
-      title="Pelanggan baru"
+      title={initial ? 'Ubah pelanggan' : 'Pelanggan baru'}
       footer={
         <Button
-          title="Simpan pelanggan"
+          title={initial ? 'Simpan perubahan' : 'Simpan pelanggan'}
           size="lg"
           onPress={() => {
             setTouched(true)
@@ -50,6 +62,7 @@ export function CustomerFormSheet({ visible, onClose, onCreate, withDistance }: 
       <TextField label="Nama" required value={draft.name} onChangeText={(name) => setDraft({ ...draft, name })} error={nameError} autoCapitalize="words" />
       <TextField label="WhatsApp" required value={draft.phone} onChangeText={(phone) => setDraft({ ...draft, phone })} error={phoneError} keyboardType="phone-pad" placeholder="0812-3456-7890" />
       <TextField label="Alamat" value={draft.address} onChangeText={(address) => setDraft({ ...draft, address })} hint="Wajib untuk jemput/antar." multiline />
+      <TextField label="Catatan" value={draft.notes} onChangeText={(notes) => setDraft({ ...draft, notes })} placeholder="Contoh: alergi pewangi kuat" multiline />
       {withDistance && (
         <TextField label="Perkiraan jarak dari outlet (km)" value={draft.km} onChangeText={(km) => setDraft({ ...draft, km })} keyboardType="decimal-pad" placeholder="3,5" hint="Titik peta menyusul; jarak dipakai untuk zona." />
       )}

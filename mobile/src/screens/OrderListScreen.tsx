@@ -1,8 +1,10 @@
+import { inRange } from '@swarapos/core/date-range'
 import { statusPhase } from '@swarapos/core/domain/order-status'
 import type { StatusPhase } from '@swarapos/core/types'
 import { ClipboardList, Search } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { FlatList, StyleSheet, TextInput, View } from 'react-native'
+import { DateFilter, dateFilterRange, initialDateFilter } from '@/components/DateFilter'
 import { OrderCard } from '@/components/OrderCard'
 import { useNow } from '@/lib/use-now'
 import { useCustomerMap, useOutletOrders } from '@/store/hooks'
@@ -26,22 +28,26 @@ export function OrderListScreen() {
   const customers = useCustomerMap()
   const [query, setQuery] = useState('')
   const [phase, setPhase] = useState<StatusPhase | 'all'>('all')
+  const [dates, setDates] = useState(() => initialDateFilter('all', new Date()))
 
   const searched = useMemo(() => {
+    // Tanggal order masuk, batas hari WIB.
+    const range = dateFilterRange(dates, now)
     const q = query.trim().toLowerCase()
     const digits = q.replace(/\D/g, '')
     return [...orders]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .filter((o) => inRange(o.createdAt, range))
       .filter((o) => {
         if (!q) return true
         const c = customers.get(o.customerId)
         return o.orderNo.toLowerCase().includes(q) || c?.name.toLowerCase().includes(q) || (digits.length >= 3 && c?.phone.replace(/\D/g, '').includes(digits))
       })
-  }, [orders, customers, query])
+  }, [orders, customers, query, dates, now])
   const visible = phase === 'all' ? searched : searched.filter((o) => statusPhase(o.status) === phase)
 
   return (
-    <Screen title="Order" subtitle={`${orders.length} order di outlet ini`} scroll={false}>
+    <Screen title="Order" subtitle={dates.preset === 'all' ? `${orders.length} order di outlet ini` : `${searched.length} order pada tanggal terpilih`} scroll={false}>
       <FlatList
         data={visible}
         keyExtractor={(o) => o.id}
@@ -60,6 +66,7 @@ export function OrderListScreen() {
                 accessibilityLabel="Cari order"
               />
             </View>
+            <DateFilter value={dates} onChange={setDates} now={now} />
             <ChipRow
               items={PHASES.map((p) => ({ ...p, count: p.id === 'all' ? searched.length : searched.filter((o) => statusPhase(o.status) === p.id).length }))}
               value={phase}

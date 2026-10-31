@@ -12,7 +12,8 @@ export function KpiTile({ label, value, hint, icon: Icon, accent = color.primary
         </Text>
         <Icon size={18} color={accent} />
       </View>
-      <Text style={styles.kpiValue} numberOfLines={1} adjustsFontSizeToFit>
+      {/* Nominal panjang (Rp1.333.350) dikecilkan; adjustsFontSizeToFit hanya bekerja di native, tidak di web. */}
+      <Text style={[styles.kpiValue, { fontSize: value.length >= 13 ? 16 : value.length >= 10 ? 18 : 22 }]} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
       {hint && (
@@ -104,6 +105,6 @@ const styles = StyleSheet.create({
   segmentTextActive: { color: color.fg, fontFamily: font.semibold },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: space(3), paddingVertical: 3 },
   rowLabel: { flexShrink: 1, fontFamily: font.regular, fontSize: 14, color: color.muted },
-  rowValue: { fontFamily: font.medium, fontSize: 14, color: color.fg },
+  rowValue: { flexShrink: 1, textAlign: 'right', fontFamily: font.medium, fontSize: 14, color: color.fg },
   rowStrong: { fontFamily: font.bold, fontSize: 16, color: color.fg },
 })

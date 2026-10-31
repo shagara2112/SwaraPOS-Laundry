@@ -39,7 +39,8 @@
         {
           "cameraPermission": "Izinkan SwaraPOS memakai kamera untuk scan label order dan memotret bukti serah-terima."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": false,
