@@ -12,7 +12,7 @@ import { Dialog } from '@/components/ui/dialog'
 import { Select } from '@/components/ui/select'
 import { cn } from '@/lib/cn'
 import { STATUS_LABEL } from '@swarapos/core/domain/order-status'
-import { HOLD_STATUSES, PRODUCTION_COLUMNS } from '@swarapos/core/production'
+import { HOLD_STATUSES, PRODUCTION_COLUMNS, sortForProduction } from '@swarapos/core/production'
 import { isLate } from '@swarapos/core/selectors'
 import { act } from '@/lib/store/act'
 import { transitionOrder } from '@swarapos/core/store/actions-order'
@@ -61,17 +61,13 @@ export default function ProduksiPage() {
 
   const filtered = useMemo(
     () =>
-      orders
-        .filter((o) => (serviceId === 'all' ? true : o.items.some((i) => i.serviceId === serviceId)))
-        .filter((o) => (onlyLate ? isLate(o, now) : true))
-        .filter((o) => (onlyExpress ? o.express : true))
-        .sort((a, b) => {
-          const late = Number(isLate(b, now)) - Number(isLate(a, now))
-          if (late) return late
-          const express = Number(b.express) - Number(a.express)
-          if (express) return express
-          return a.dueAt.localeCompare(b.dueAt)
-        }),
+      sortForProduction(
+        orders
+          .filter((o) => (serviceId === 'all' ? true : o.items.some((i) => i.serviceId === serviceId)))
+          .filter((o) => (onlyLate ? isLate(o, now) : true))
+          .filter((o) => (onlyExpress ? o.express : true)),
+        now,
+      ),
     [orders, serviceId, onlyLate, onlyExpress, now],
   )
 

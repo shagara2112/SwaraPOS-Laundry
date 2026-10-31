@@ -1,4 +1,5 @@
 import { nextStatuses, requiresReason } from './domain/order-status'
+import { isLate } from './selectors'
 import { resumeTarget } from './store/actions-order'
 import type { Order, OrderStatus } from './types'
 
@@ -26,4 +27,15 @@ export function primaryNext(order: Order): OrderStatus | undefined {
     return order.handback === 'DELIVERY' ? 'OUT_FOR_DELIVERY' : 'COMPLETED'
   }
   return forward[0]
+}
+
+/** Urutan kartu produksi: terlambat dulu, lalu express, lalu jatuh tempo terdekat. */
+export function sortForProduction(orders: Order[], now: Date): Order[] {
+  return [...orders].sort((a, b) => {
+    const late = Number(isLate(b, now)) - Number(isLate(a, now))
+    if (late) return late
+    const express = Number(b.express) - Number(a.express)
+    if (express) return express
+    return a.dueAt.localeCompare(b.dueAt)
+  })
 }
