@@ -32,11 +32,11 @@ export function can(role: Role, action: Action): boolean {
   return ALLOWED[action].includes(role)
 }
 
-/** Rute awal (grup tab Expo Router) untuk tiap peran. */
+/** Rute awal (folder tab Expo Router) untuk tiap peran. */
 export const ROLE_HOME: Record<Role, string> = {
-  OWNER: '/(owner)',
-  CASHIER: '/(kasir)',
-  OPERATOR: '/(operator)',
-  QC: '/(qc)',
-  COURIER: '/(kurir)',
+  OWNER: '/owner',
+  CASHIER: '/kasir',
+  OPERATOR: '/operator',
+  QC: '/qc',
+  COURIER: '/kurir',
 }

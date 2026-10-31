@@ -27,12 +27,13 @@ describe('can', () => {
 
 describe('ROLE_HOME', () => {
   it('setiap peran punya rute awal grup tabnya', () => {
+    // Folder biasa (bukan grup) supaya setiap peran punya path unik dan tidak bentrok dengan "/".
     expect(ROLE_HOME).toEqual({
-      OWNER: '/(owner)',
-      CASHIER: '/(kasir)',
-      OPERATOR: '/(operator)',
-      QC: '/(qc)',
-      COURIER: '/(kurir)',
+      OWNER: '/owner',
+      CASHIER: '/kasir',
+      OPERATOR: '/operator',
+      QC: '/qc',
+      COURIER: '/kurir',
     })
   })
 })
