@@ -3,10 +3,10 @@
 import { Plus, Trash2, Zap } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/cn'
-import { lineTotal } from '@/lib/domain/pricing'
-import { formatRupiah, parseDecimalID } from '@/lib/format'
-import { UNIT_SHORT } from '@/lib/labels'
-import type { Service } from '@/lib/types'
+import { lineTotal } from '@swarapos/core/domain/pricing'
+import { formatRupiah, parseDecimalID } from '@swarapos/core/format'
+import { UNIT_SHORT } from '@swarapos/core/labels'
+import type { Service } from '@swarapos/core/types'
 
 export type DraftLine = { key: string; serviceId: string; qtyText: string }
 

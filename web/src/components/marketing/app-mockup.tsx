@@ -1,6 +1,6 @@
 import { AlarmClock, ClipboardList, HandCoins, Wallet } from 'lucide-react'
 import { StatusBadge } from '@/components/order/status-badge'
-import type { OrderStatus } from '@/lib/types'
+import type { OrderStatus } from '@swarapos/core/types'
 
 const KPIS = [
   { icon: ClipboardList, label: 'Order hari ini', value: '38' },

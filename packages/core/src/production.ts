@@ -1,6 +1,6 @@
-import { nextStatuses, requiresReason } from '@/lib/domain/order-status'
-import { resumeTarget } from '@/lib/store/actions-order'
-import type { Order, OrderStatus } from '@/lib/types'
+import { nextStatuses, requiresReason } from './domain/order-status'
+import { resumeTarget } from './store/actions-order'
+import type { Order, OrderStatus } from './types'
 
 /** Kolom papan produksi; beberapa status penerimaan digabung ke satu kolom. */
 export const PRODUCTION_COLUMNS: { id: string; label: string; statuses: OrderStatus[] }[] = [

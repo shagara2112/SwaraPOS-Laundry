@@ -1,4 +1,4 @@
-import type { SubmissionStatus } from '@/lib/types'
+import type { SubmissionStatus } from '../types'
 
 export const MAX_PROOF_BYTES = 2 * 1024 * 1024
 export const ACCEPTED_PROOF_TYPES = ['image/jpeg', 'image/png', 'application/pdf']

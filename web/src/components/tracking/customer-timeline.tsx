@@ -1,7 +1,7 @@
 import { cn } from '@/lib/cn'
-import { formatDateTime } from '@/lib/format'
-import { customerStatusLabel } from '@/lib/labels'
-import type { Order } from '@/lib/types'
+import { formatDateTime } from '@swarapos/core/format'
+import { customerStatusLabel } from '@swarapos/core/labels'
+import type { Order } from '@swarapos/core/types'
 
 /** Timeline versi pelanggan: tanpa nama staf, catatan internal, atau catatan QC. */
 export function CustomerTimeline({ order }: { order: Order }) {

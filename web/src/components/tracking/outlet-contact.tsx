@@ -1,7 +1,7 @@
 import { Clock, MapPin, MessageCircle } from 'lucide-react'
 import { buttonClasses } from '@/components/ui/button'
-import { buildWaUrl } from '@/lib/domain/whatsapp'
-import type { Outlet } from '@/lib/types'
+import { buildWaUrl } from '@swarapos/core/domain/whatsapp'
+import type { Outlet } from '@swarapos/core/types'
 
 export function OutletContact({ outlet, orderNo }: { outlet: Outlet; orderNo: string }) {
   const chatUrl = buildWaUrl(outlet.phone, `Halo ${outlet.name}, saya ingin menanyakan order ${orderNo}.`)

@@ -4,7 +4,7 @@ import { LockKeyhole } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { verifyTrackingPhone } from '@/lib/domain/tracking'
+import { verifyTrackingPhone } from '@swarapos/core/domain/tracking'
 
 /** Pelanggan membuka detail order dengan 4 digit terakhir nomor WhatsApp-nya (PRD §F). */
 export function PhoneGate({ orderNo, phone, onVerified }: { orderNo: string; phone: string; onVerified: () => void }) {

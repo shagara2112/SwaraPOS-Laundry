@@ -5,8 +5,8 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { act } from '@/lib/store/act'
-import { recordQc, transitionOrder } from '@/lib/store/actions-order'
-import type { Order } from '@/lib/types'
+import { recordQc, transitionOrder } from '@swarapos/core/store/actions-order'
+import type { Order } from '@swarapos/core/types'
 import { ReasonDialog } from './reason-dialog'
 
 export const QC_CHECKLIST = ['Bersih, noda tertangani', 'Kering sempurna', 'Wangi', 'Terlipat / tersetrika rapi', 'Jumlah item cocok']

@@ -13,9 +13,9 @@ import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/cn'
 import { act } from '@/lib/store/act'
-import { upsertInstruction } from '@/lib/store/actions-platform'
+import { upsertInstruction } from '@swarapos/core/store/actions-platform'
 import { useDemo } from '@/lib/store/demo-store'
-import type { InstructionMethod, PaymentInstruction } from '@/lib/types'
+import type { InstructionMethod, PaymentInstruction } from '@swarapos/core/types'
 
 const METHOD = {
   TRANSFER: { label: 'Transfer bank', icon: Landmark },

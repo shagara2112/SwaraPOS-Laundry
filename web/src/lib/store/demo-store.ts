@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware'
-import { createSeed } from './seed'
+import { createSeed } from '@swarapos/core/store/seed'
 import {
   DEMO_STATE_VERSION,
   isDemoStale,
@@ -9,7 +9,7 @@ import {
   parseStoredJson,
   type ActionResult,
   type DemoState,
-} from './state'
+} from '@swarapos/core/store/state'
 
 export type DemoStore = DemoState & {
   /** Jalankan reducer terhadap state saat ini; state hanya diganti bila hasilnya `ok`. */

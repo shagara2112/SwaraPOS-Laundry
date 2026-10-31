@@ -11,8 +11,8 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
-import { formatDate } from '@/lib/format'
-import { TENANT_STATUS } from '@/lib/labels'
+import { formatDate } from '@swarapos/core/format'
+import { TENANT_STATUS } from '@swarapos/core/labels'
 import { useDemo } from '@/lib/store/demo-store'
 
 export default function TenantListPage() {

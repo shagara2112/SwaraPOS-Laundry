@@ -1,4 +1,4 @@
-import type { OrderStatus, StatusPhase } from '@/lib/types'
+import type { OrderStatus, StatusPhase } from '../types'
 
 // Peta transisi maju (TDD §7) ditambah jalur walk-in/drop-off dan ambil sendiri
 // (spec §2). Urutan di dalam array menentukan urutan tombol di UI.

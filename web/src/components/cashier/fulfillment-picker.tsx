@@ -2,7 +2,7 @@
 
 import { Bike, Footprints, PackageOpen, Store, Truck, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import type { HandbackType, IntakeType } from '@/lib/types'
+import type { HandbackType, IntakeType } from '@swarapos/core/types'
 
 function Segmented<T extends string>({
   legend,

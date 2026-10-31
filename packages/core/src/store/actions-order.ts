@@ -1,10 +1,10 @@
-import { haversineKm } from '@/lib/domain/delivery-zone'
-import { formatOrderNo, jakartaDateKey } from '@/lib/domain/order-number'
-import { canTransition } from '@/lib/domain/order-status'
-import { calculateTotals, estimateDueAt, lineTotal } from '@/lib/domain/pricing'
-import { createTrackingToken } from '@/lib/domain/tracking'
-import { waEventForStatus } from '@/lib/domain/whatsapp'
-import { newId } from '@/lib/ids'
+import { haversineKm } from '../domain/delivery-zone'
+import { formatOrderNo, jakartaDateKey } from '../domain/order-number'
+import { canTransition } from '../domain/order-status'
+import { calculateTotals, estimateDueAt, lineTotal } from '../domain/pricing'
+import { createTrackingToken } from '../domain/tracking'
+import { waEventForStatus } from '../domain/whatsapp'
+import { newId } from '../ids'
 import type {
   Actor,
   DeliveryTask,
@@ -16,7 +16,7 @@ import type {
   OrderStatus,
   StatusEvent,
   WaLog,
-} from '@/lib/types'
+} from '../types'
 import { appendAudit, fail, type ActionResult, type DemoState } from './state'
 
 export type NewOrderInput = {

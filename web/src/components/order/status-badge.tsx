@@ -9,8 +9,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { STATUS_LABEL, statusPhase } from '@/lib/domain/order-status'
-import type { OrderStatus, StatusPhase } from '@/lib/types'
+import { STATUS_LABEL, statusPhase } from '@swarapos/core/domain/order-status'
+import type { OrderStatus, StatusPhase } from '@swarapos/core/types'
 
 export const PHASE_ICON: Record<StatusPhase, LucideIcon> = {
   intake: Inbox,

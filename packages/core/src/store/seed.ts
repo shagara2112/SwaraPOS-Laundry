@@ -1,7 +1,7 @@
-import { DEFAULT_ZONES, haversineKm, quoteDelivery } from '@/lib/domain/delivery-zone'
-import { formatOrderNo, jakartaDateKey } from '@/lib/domain/order-number'
-import { calculateTotals, estimateDueAt, lineTotal } from '@/lib/domain/pricing'
-import { waEventForStatus } from '@/lib/domain/whatsapp'
+import { DEFAULT_ZONES, haversineKm, quoteDelivery } from '../domain/delivery-zone'
+import { formatOrderNo, jakartaDateKey } from '../domain/order-number'
+import { calculateTotals, estimateDueAt, lineTotal } from '../domain/pricing'
+import { waEventForStatus } from '../domain/whatsapp'
 import type {
   Actor,
   AuditEntry,
@@ -22,7 +22,7 @@ import type {
   StatusEvent,
   SubscriptionInvoice,
   WaLog,
-} from '@/lib/types'
+} from '../types'
 import type { DemoState } from './state'
 
 // Data contoh deterministik: `createSeed(now)` selalu menghasilkan state yang sama

@@ -14,13 +14,13 @@ import { Select } from '@/components/ui/select'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
 import { Tabs } from '@/components/ui/tabs'
 import { toast } from '@/components/ui/toast'
-import { buildWaMessage, WA_EVENT_LABEL } from '@/lib/domain/whatsapp'
-import { ROLE_LABEL } from '@/lib/labels'
-import { planUsage } from '@/lib/selectors'
+import { buildWaMessage, WA_EVENT_LABEL } from '@swarapos/core/domain/whatsapp'
+import { ROLE_LABEL } from '@swarapos/core/labels'
+import { planUsage } from '@swarapos/core/selectors'
 import { act } from '@/lib/store/act'
-import { updateZones } from '@/lib/store/actions-catalog'
+import { updateZones } from '@swarapos/core/store/actions-catalog'
 import { useDemo } from '@/lib/store/demo-store'
-import type { DeliveryZone, StaffRole, WaEvent } from '@/lib/types'
+import type { DeliveryZone, StaffRole, WaEvent } from '@swarapos/core/types'
 
 function OutletTab() {
   const outlets = useDemo((s) => s.outlets)

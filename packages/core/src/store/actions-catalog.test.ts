@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import type { Actor } from '@/lib/types'
-import { DEFAULT_ZONES } from '@/lib/domain/delivery-zone'
+import type { Actor } from '../types'
+import { DEFAULT_ZONES } from '../domain/delivery-zone'
 import {
   addCustomer,
   assignCourier,

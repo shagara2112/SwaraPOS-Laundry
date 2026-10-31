@@ -2,8 +2,8 @@
 
 import { CalendarClock, CircleAlert, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { formatDateTime, formatRupiah } from '@/lib/format'
-import type { OrderTotals } from '@/lib/types'
+import { formatDateTime, formatRupiah } from '@swarapos/core/format'
+import type { OrderTotals } from '@swarapos/core/types'
 
 export type SummaryLine = { label: string; detail: string; total: number }
 

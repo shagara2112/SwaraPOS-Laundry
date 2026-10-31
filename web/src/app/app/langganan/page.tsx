@@ -10,9 +10,9 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
 import { Tabs } from '@/components/ui/tabs'
 import { cn } from '@/lib/cn'
-import { formatDate, formatDateTime, formatRupiah } from '@/lib/format'
-import { INVOICE_STATUS, SUBMISSION_STATUS, TENANT_STATUS } from '@/lib/labels'
-import { planUsage, type PlanUsageItem } from '@/lib/selectors'
+import { formatDate, formatDateTime, formatRupiah } from '@swarapos/core/format'
+import { INVOICE_STATUS, SUBMISSION_STATUS, TENANT_STATUS } from '@swarapos/core/labels'
+import { planUsage, type PlanUsageItem } from '@swarapos/core/selectors'
 import { useDemo } from '@/lib/store/demo-store'
 
 function Meter({ item }: { item: PlanUsageItem }) {

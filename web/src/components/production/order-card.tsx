@@ -6,11 +6,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/order/status-badge'
 import { cn } from '@/lib/cn'
-import { STATUS_LABEL, statusPhase } from '@/lib/domain/order-status'
-import { formatDueIn, formatQty } from '@/lib/labels'
-import { primaryNext } from '@/lib/production'
-import { isLate } from '@/lib/selectors'
-import type { Customer, Order, OrderStatus } from '@/lib/types'
+import { STATUS_LABEL, statusPhase } from '@swarapos/core/domain/order-status'
+import { formatDueIn, formatQty } from '@swarapos/core/labels'
+import { primaryNext } from '@swarapos/core/production'
+import { isLate } from '@swarapos/core/selectors'
+import type { Customer, Order, OrderStatus } from '@swarapos/core/types'
 
 const THREE_HOURS = 3 * 60 * 60 * 1000
 

@@ -9,10 +9,10 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { KpiCard } from '@/components/ui/kpi-card'
 import { cn } from '@/lib/cn'
-import { formatDateTime, formatRupiah } from '@/lib/format'
-import { SUBMISSION_STATUS, TENANT_STATUS } from '@/lib/labels'
+import { formatDateTime, formatRupiah } from '@swarapos/core/format'
+import { SUBMISSION_STATUS, TENANT_STATUS } from '@swarapos/core/labels'
 import { useDemo } from '@/lib/store/demo-store'
-import type { TenantStatus } from '@/lib/types'
+import type { TenantStatus } from '@swarapos/core/types'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 const HEALTH_TONE = { UP: 'success', DEGRADED: 'warning', DOWN: 'danger' } as const

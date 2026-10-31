@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { canTransition } from '@/lib/domain/order-status'
+import { canTransition } from '../domain/order-status'
 import { createSeed } from './seed'
 import { DEMO_STATE_VERSION, isDemoStale, migratePersisted, parseStoredJson, shiftDemoTime } from './state'
 

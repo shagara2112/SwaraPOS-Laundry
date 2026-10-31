@@ -3,10 +3,10 @@
 import { Printer } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Button } from '@/components/ui/button'
-import { formatDateTime } from '@/lib/format'
-import { formatQty } from '@/lib/labels'
-import { trackingUrl } from '@/lib/selectors'
-import type { Customer, Order, Outlet } from '@/lib/types'
+import { formatDateTime } from '@swarapos/core/format'
+import { formatQty } from '@swarapos/core/labels'
+import { trackingUrl } from '@swarapos/core/selectors'
+import type { Customer, Order, Outlet } from '@swarapos/core/types'
 
 /** Label order ukuran printer thermal 58 mm. QR hanya berisi URL lacak opaque, tanpa data pribadi. */
 export function OrderLabel({ order, outlet, customer }: { order: Order; outlet: Outlet; customer: Customer }) {

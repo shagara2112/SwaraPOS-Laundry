@@ -13,12 +13,12 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { normalizePhoneID } from '@/lib/domain/whatsapp'
-import { formatDate, formatRupiah } from '@/lib/format'
+import { normalizePhoneID } from '@swarapos/core/domain/whatsapp'
+import { formatDate, formatRupiah } from '@swarapos/core/format'
 import { act } from '@/lib/store/act'
-import { addCustomer } from '@/lib/store/actions-catalog'
+import { addCustomer } from '@swarapos/core/store/actions-catalog'
 import { useDemo } from '@/lib/store/demo-store'
-import type { Customer, Order } from '@/lib/types'
+import type { Customer, Order } from '@swarapos/core/types'
 
 type Row = { customer: Customer; orders: Order[]; spent: number; lastAt?: string }
 

@@ -1,5 +1,4 @@
-import type { BadgeTone } from '@/components/ui/badge'
-import { formatRupiah } from '@/lib/format'
+import { formatRupiah } from './format'
 import type {
   DeliveryTaskStatus,
   HandbackType,
@@ -14,11 +13,14 @@ import type {
   SubmissionStatus,
   TenantStatus,
   WaState,
-} from '@/lib/types'
+} from './types'
+
+/** Nada warna untuk badge/label; dipetakan ke warna oleh masing-masing UI (web, mobile). */
+export type Tone = 'intake' | 'production' | 'qc' | 'ready' | 'done' | 'exception' | 'neutral' | 'primary' | 'success' | 'warning' | 'danger'
 
 // Label dan nada warna untuk enum domain. Satu tempat supaya teks UI konsisten.
 
-export const PAYMENT_STATUS: Record<PaymentStatus, { label: string; tone: BadgeTone }> = {
+export const PAYMENT_STATUS: Record<PaymentStatus, { label: string; tone: Tone }> = {
   UNPAID: { label: 'Belum bayar', tone: 'danger' },
   PARTIAL: { label: 'Bayar sebagian', tone: 'warning' },
   PAID: { label: 'Lunas', tone: 'success' },
@@ -50,7 +52,7 @@ export const CHANNEL_LABEL: Record<OrderChannel, string> = {
   WHATSAPP: 'WhatsApp',
 }
 
-export const WA_STATE: Record<WaState, { label: string; tone: BadgeTone }> = {
+export const WA_STATE: Record<WaState, { label: string; tone: Tone }> = {
   NOT_SENT: { label: 'Belum dikirim', tone: 'warning' },
   OPENED: { label: 'Dibuka', tone: 'primary' },
   SENT: { label: 'Ditandai terkirim', tone: 'success' },
@@ -64,7 +66,7 @@ export const ROLE_LABEL: Record<StaffRole, string> = {
   COURIER: 'Kurir',
 }
 
-export const DELIVERY_STATUS: Record<DeliveryTaskStatus, { label: string; tone: BadgeTone }> = {
+export const DELIVERY_STATUS: Record<DeliveryTaskStatus, { label: string; tone: Tone }> = {
   UNASSIGNED: { label: 'Belum ditugaskan', tone: 'warning' },
   ASSIGNED: { label: 'Ditugaskan', tone: 'intake' },
   ACCEPTED: { label: 'Diterima kurir', tone: 'intake' },
@@ -74,7 +76,7 @@ export const DELIVERY_STATUS: Record<DeliveryTaskStatus, { label: string; tone: 
   FAILED: { label: 'Gagal', tone: 'danger' },
 }
 
-export const TENANT_STATUS: Record<TenantStatus, { label: string; tone: BadgeTone }> = {
+export const TENANT_STATUS: Record<TenantStatus, { label: string; tone: Tone }> = {
   TRIAL: { label: 'Trial', tone: 'primary' },
   ACTIVE: { label: 'Aktif', tone: 'success' },
   PAST_DUE: { label: 'Menunggak', tone: 'warning' },
@@ -82,14 +84,14 @@ export const TENANT_STATUS: Record<TenantStatus, { label: string; tone: BadgeTon
   CANCELLED: { label: 'Berhenti', tone: 'neutral' },
 }
 
-export const INVOICE_STATUS: Record<InvoiceStatus, { label: string; tone: BadgeTone }> = {
+export const INVOICE_STATUS: Record<InvoiceStatus, { label: string; tone: Tone }> = {
   UNPAID: { label: 'Belum dibayar', tone: 'warning' },
   UNDER_REVIEW: { label: 'Menunggu review', tone: 'primary' },
   PAID: { label: 'Lunas', tone: 'success' },
   OVERDUE: { label: 'Lewat jatuh tempo', tone: 'danger' },
 }
 
-export const SUBMISSION_STATUS: Record<SubmissionStatus, { label: string; tone: BadgeTone }> = {
+export const SUBMISSION_STATUS: Record<SubmissionStatus, { label: string; tone: Tone }> = {
   UNDER_REVIEW: { label: 'Menunggu review', tone: 'primary' },
   AMOUNT_MISMATCH_REVIEW: { label: 'Nominal berbeda', tone: 'warning' },
   APPROVED: { label: 'Disetujui', tone: 'success' },

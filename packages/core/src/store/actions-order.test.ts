@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { Actor, Order, OrderStatus } from '@/lib/types'
+import type { Actor, Order, OrderStatus } from '../types'
 import {
   createOrder,
   markWhatsApp,

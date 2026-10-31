@@ -5,8 +5,8 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { normalizePhoneID } from '@/lib/domain/whatsapp'
-import type { Customer } from '@/lib/types'
+import { normalizePhoneID } from '@swarapos/core/domain/whatsapp'
+import type { Customer } from '@swarapos/core/types'
 
 export type NewCustomerInput = { name: string; phone: string; address: string; km: string }
 

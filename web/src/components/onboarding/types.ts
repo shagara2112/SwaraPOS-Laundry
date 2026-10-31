@@ -1,4 +1,4 @@
-import type { DeliveryZone, PricingUnit } from '@/lib/types'
+import type { DeliveryZone, PricingUnit } from '@swarapos/core/types'
 
 export type DayHours = { day: string; open: boolean; from: string; to: string }
 

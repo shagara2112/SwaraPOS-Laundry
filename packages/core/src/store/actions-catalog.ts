@@ -1,7 +1,7 @@
-import { normalizePhoneID } from '@/lib/domain/whatsapp'
-import { formatRupiah } from '@/lib/format'
-import { newId } from '@/lib/ids'
-import type { Actor, Customer, DeliveryTask, DeliveryTaskStatus, DeliveryZone, LatLng, Service } from '@/lib/types'
+import { normalizePhoneID } from '../domain/whatsapp'
+import { formatRupiah } from '../format'
+import { newId } from '../ids'
+import type { Actor, Customer, DeliveryTask, DeliveryTaskStatus, DeliveryZone, LatLng, Service } from '../types'
 import { transitionOrder } from './actions-order'
 import { appendAudit, fail, type ActionResult, type DemoState, type OutletPaymentMethod } from './state'
 

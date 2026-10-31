@@ -9,12 +9,12 @@ import { Dialog } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { formatDateTime, formatRupiah, parseRupiahID } from '@/lib/format'
-import { PAYMENT_METHOD_LABEL, PAYMENT_STATUS } from '@/lib/labels'
-import { amountDue, paidAmount } from '@/lib/selectors'
+import { formatDateTime, formatRupiah, parseRupiahID } from '@swarapos/core/format'
+import { PAYMENT_METHOD_LABEL, PAYMENT_STATUS } from '@swarapos/core/labels'
+import { amountDue, paidAmount } from '@swarapos/core/selectors'
 import { act } from '@/lib/store/act'
-import { recordPayment } from '@/lib/store/actions-order'
-import type { Order, OrderPaymentMethod } from '@/lib/types'
+import { recordPayment } from '@swarapos/core/store/actions-order'
+import type { Order, OrderPaymentMethod } from '@swarapos/core/types'
 
 function RecordPaymentDialog({ order, open, onClose }: { order: Order; open: boolean; onClose: () => void }) {
   const [method, setMethod] = useState<OrderPaymentMethod>('CASH')

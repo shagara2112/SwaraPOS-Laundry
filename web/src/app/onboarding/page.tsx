@@ -13,7 +13,7 @@ import type { WizardState } from '@/components/onboarding/types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Stepper } from '@/components/ui/stepper'
-import { DEFAULT_ZONES } from '@/lib/domain/delivery-zone'
+import { DEFAULT_ZONES } from '@swarapos/core/domain/delivery-zone'
 
 const STEPS = [
   { label: 'Bisnis', title: 'Kenalkan bisnis Anda', description: 'Nama dan warna ini tampil di nota, label, dan halaman lacak pelanggan.' },

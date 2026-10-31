@@ -13,9 +13,9 @@ import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/cn'
 import { act } from '@/lib/store/act'
-import { upsertOutletPaymentMethod } from '@/lib/store/actions-catalog'
+import { upsertOutletPaymentMethod } from '@swarapos/core/store/actions-catalog'
 import { useDemo } from '@/lib/store/demo-store'
-import type { OutletPaymentMethod } from '@/lib/store/state'
+import type { OutletPaymentMethod } from '@swarapos/core/store/state'
 
 type Method = OutletPaymentMethod['type']
 type Draft = Omit<OutletPaymentMethod, 'id'> & { id?: string }

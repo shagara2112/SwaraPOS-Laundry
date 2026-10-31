@@ -3,7 +3,7 @@
 import { Check, Copy, ExternalLink, QrCode } from 'lucide-react'
 import { useState } from 'react'
 import { buttonClasses } from '@/components/ui/button'
-import type { PaymentInstruction } from '@/lib/types'
+import type { PaymentInstruction } from '@swarapos/core/types'
 
 function CopyValue({ value }: { value: string }) {
   const [copied, setCopied] = useState(false)

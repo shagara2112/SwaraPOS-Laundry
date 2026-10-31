@@ -8,12 +8,12 @@ import { Input } from '@/components/ui/input'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/cn'
-import { parseRupiahID } from '@/lib/format'
-import { UNIT_SHORT } from '@/lib/labels'
+import { parseRupiahID } from '@swarapos/core/format'
+import { UNIT_SHORT } from '@swarapos/core/labels'
 import { act } from '@/lib/store/act'
-import { setServiceActive, updateServicePrice } from '@/lib/store/actions-catalog'
+import { setServiceActive, updateServicePrice } from '@swarapos/core/store/actions-catalog'
 import { useDemo } from '@/lib/store/demo-store'
-import type { Service } from '@/lib/types'
+import type { Service } from '@swarapos/core/types'
 
 function PriceCell({ service, outletId, outletCode }: { service: Service; outletId: string; outletCode: string }) {
   const current = service.prices[outletId] ?? 0

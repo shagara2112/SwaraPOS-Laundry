@@ -4,12 +4,12 @@ import { Banknote, Check, Copy, Landmark, QrCode, Send } from 'lucide-react'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { buttonClasses } from '@/components/ui/button'
-import { buildWaUrl } from '@/lib/domain/whatsapp'
-import { formatRupiah } from '@/lib/format'
-import { formatQty, PAYMENT_STATUS } from '@/lib/labels'
-import { amountDue, paidAmount } from '@/lib/selectors'
-import type { OutletPaymentMethod } from '@/lib/store/state'
-import type { Order, Outlet } from '@/lib/types'
+import { buildWaUrl } from '@swarapos/core/domain/whatsapp'
+import { formatRupiah } from '@swarapos/core/format'
+import { formatQty, PAYMENT_STATUS } from '@swarapos/core/labels'
+import { amountDue, paidAmount } from '@swarapos/core/selectors'
+import type { OutletPaymentMethod } from '@swarapos/core/store/state'
+import type { Order, Outlet } from '@swarapos/core/types'
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)

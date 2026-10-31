@@ -1,10 +1,10 @@
 import { Check, TriangleAlert } from 'lucide-react'
 import { statusIcon } from '@/components/order/status-badge'
 import { cn } from '@/lib/cn'
-import { statusPhase } from '@/lib/domain/order-status'
-import { formatDateTime } from '@/lib/format'
-import { customerStatusLabel } from '@/lib/labels'
-import type { Order, StatusPhase } from '@/lib/types'
+import { statusPhase } from '@swarapos/core/domain/order-status'
+import { formatDateTime } from '@swarapos/core/format'
+import { customerStatusLabel } from '@swarapos/core/labels'
+import type { Order, StatusPhase } from '@swarapos/core/types'
 
 const STEPS = ['Diterima', 'Diproses', 'Cek kualitas', 'Siap', 'Selesai']
 const STEP_OF: Record<Exclude<StatusPhase, 'exception'>, number> = { intake: 0, production: 1, qc: 2, ready: 3, done: 4 }

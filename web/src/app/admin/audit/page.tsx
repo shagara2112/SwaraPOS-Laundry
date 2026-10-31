@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Select } from '@/components/ui/select'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime } from '@swarapos/core/format'
 import { useDemo } from '@/lib/store/demo-store'
 
 export default function AuditPage() {

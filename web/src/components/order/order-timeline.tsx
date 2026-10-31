@@ -1,8 +1,8 @@
 import { NotebookPen } from 'lucide-react'
-import { STATUS_LABEL, statusPhase } from '@/lib/domain/order-status'
+import { STATUS_LABEL, statusPhase } from '@swarapos/core/domain/order-status'
 import { cn } from '@/lib/cn'
-import { formatDateTime } from '@/lib/format'
-import type { StatusEvent } from '@/lib/types'
+import { formatDateTime } from '@swarapos/core/format'
+import type { StatusEvent } from '@swarapos/core/types'
 import { statusIcon } from './status-badge'
 
 const DOT: Record<string, string> = {

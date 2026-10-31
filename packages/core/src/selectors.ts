@@ -1,9 +1,9 @@
-import { jakartaDateKey } from '@/lib/domain/order-number'
-import { statusPhase } from '@/lib/domain/order-status'
-import type { DemoState } from '@/lib/store/state'
-import type { Order, Plan } from '@/lib/types'
+import { jakartaDateKey } from './domain/order-number'
+import { statusPhase } from './domain/order-status'
+import type { DemoState } from './store/state'
+import type { Order, Plan } from './types'
 
-export { resumeTarget } from '@/lib/store/actions-order'
+export { resumeTarget } from './store/actions-order'
 
 export function isLate(order: Order, now: Date): boolean {
   if (order.status === 'CANCELLED' || statusPhase(order.status) === 'done') return false

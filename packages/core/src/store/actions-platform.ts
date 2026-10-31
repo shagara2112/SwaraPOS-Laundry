@@ -1,6 +1,6 @@
-import { submissionStatusFor, validateProofFile } from '@/lib/domain/proof-file'
-import { formatRupiah } from '@/lib/format'
-import { newId } from '@/lib/ids'
+import { submissionStatusFor, validateProofFile } from '../domain/proof-file'
+import { formatRupiah } from '../format'
+import { newId } from '../ids'
 import type {
   Actor,
   PaymentInstruction,
@@ -8,7 +8,7 @@ import type {
   Plan,
   PlanCode,
   PlatformTenant,
-} from '@/lib/types'
+} from '../types'
 import { appendAudit, fail, type ActionResult, type DemoState } from './state'
 
 type Platform = DemoState['platform']

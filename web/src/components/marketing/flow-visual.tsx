@@ -1,6 +1,6 @@
 import { Bike, PackageCheck, Scale, ShieldCheck, WashingMachine, type LucideIcon } from 'lucide-react'
 import { StatusBadge } from '@/components/order/status-badge'
-import type { OrderStatus } from '@/lib/types'
+import type { OrderStatus } from '@swarapos/core/types'
 
 const STEPS: { icon: LucideIcon; title: string; text: string; status: OrderStatus }[] = [
   { icon: Bike, title: 'Pickup', text: 'Kurir menjemput sesuai slot, biaya dihitung dari zona radius.', status: 'PICKED_UP' },

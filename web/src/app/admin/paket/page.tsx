@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { parseRupiahID } from '@/lib/format'
+import { parseRupiahID } from '@swarapos/core/format'
 import { act } from '@/lib/store/act'
-import { updatePlan } from '@/lib/store/actions-platform'
+import { updatePlan } from '@swarapos/core/store/actions-platform'
 import { useDemo } from '@/lib/store/demo-store'
-import type { Plan } from '@/lib/types'
+import type { Plan } from '@swarapos/core/types'
 
 function PlanEditor({ plan, allFeatures }: { plan: Plan; allFeatures: string[] }) {
   const [price, setPrice] = useState(String(plan.pricePerOutletMonth))

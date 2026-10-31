@@ -1,4 +1,4 @@
-import type { OrderTotals, PricingUnit } from '@/lib/types'
+import type { OrderTotals, PricingUnit } from '../types'
 
 export type PriceLine = { unit: PricingUnit; unitPrice: number; qty: number }
 

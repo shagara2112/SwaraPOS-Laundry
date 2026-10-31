@@ -1,4 +1,4 @@
-import { newId } from '@/lib/ids'
+import { newId } from '../ids'
 import type {
   Actor,
   AuditEntry,
@@ -15,7 +15,7 @@ import type {
   Service,
   Staff,
   SubscriptionInvoice,
-} from '@/lib/types'
+} from '../types'
 
 // Naikkan versi setiap kali bentuk DemoState berubah: migratePersisted hanya memeriksa kerangka atas.
 // v2: metode bayar outlet terstruktur (bank, rekening, merchant QRIS, aktif, urutan).

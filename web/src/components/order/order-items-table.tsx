@@ -1,6 +1,6 @@
-import { formatRupiah } from '@/lib/format'
-import { formatLineDetail } from '@/lib/labels'
-import type { Order } from '@/lib/types'
+import { formatRupiah } from '@swarapos/core/format'
+import { formatLineDetail } from '@swarapos/core/labels'
+import type { Order } from '@swarapos/core/types'
 
 export function OrderItemsTable({ order }: { order: Order }) {
   const { totals } = order

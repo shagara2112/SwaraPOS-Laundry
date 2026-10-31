@@ -12,12 +12,12 @@ import { Field } from '@/components/ui/field'
 import { Tabs } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/cn'
-import { formatDateTime, formatRupiah } from '@/lib/format'
-import { SUBMISSION_STATUS } from '@/lib/labels'
+import { formatDateTime, formatRupiah } from '@swarapos/core/format'
+import { SUBMISSION_STATUS } from '@swarapos/core/labels'
 import { act } from '@/lib/store/act'
-import { reviewSubmission } from '@/lib/store/actions-platform'
+import { reviewSubmission } from '@swarapos/core/store/actions-platform'
 import { useDemo } from '@/lib/store/demo-store'
-import type { PaymentSubmission, SubmissionStatus } from '@/lib/types'
+import type { PaymentSubmission, SubmissionStatus } from '@swarapos/core/types'
 
 const TAB_STATUSES: Record<string, SubmissionStatus[]> = {
   pending: ['UNDER_REVIEW', 'AMOUNT_MISMATCH_REVIEW'],

@@ -3,7 +3,7 @@
 import { Info } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
-import type { DeliveryZone } from '@/lib/types'
+import type { DeliveryZone } from '@swarapos/core/types'
 import type { StepProps } from './types'
 
 function NumberCell({ value, onChange, label, suffix }: { value: number; onChange: (n: number) => void; label: string; suffix?: string }) {

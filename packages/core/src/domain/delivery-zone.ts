@@ -1,4 +1,4 @@
-import type { DeliveryZone, LatLng } from '@/lib/types'
+import type { DeliveryZone, LatLng } from '../types'
 
 export const DEFAULT_ZONES: DeliveryZone[] = [
   { id: 'z1', name: 'Zona 1', minKm: 0, maxKm: 2, pickupFee: 5000, deliveryFee: 5000 },

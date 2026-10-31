@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 import { cn } from '@/lib/cn'
-import type { StatusPhase } from '@/lib/types'
+import type { Tone } from '@swarapos/core/labels'
 
-export type BadgeTone = StatusPhase | 'neutral' | 'primary' | 'success' | 'warning' | 'danger'
+export type BadgeTone = Tone
 
 const TONES: Record<BadgeTone, string> = {
   intake: 'bg-phase-intake-soft text-phase-intake',

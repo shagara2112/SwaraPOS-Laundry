@@ -1,5 +1,5 @@
-import { formatRupiah } from '@/lib/format'
-import type { HandbackType, OrderStatus, WaEvent } from '@/lib/types'
+import { formatRupiah } from '../format'
+import type { HandbackType, OrderStatus, WaEvent } from '../types'
 
 export type WaContext = {
   customerName: string

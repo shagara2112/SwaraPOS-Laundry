@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { normalizePhoneID } from '@/lib/domain/whatsapp'
+import { normalizePhoneID } from '@swarapos/core/domain/whatsapp'
 
 type Errors = Partial<Record<'name' | 'business' | 'whatsapp' | 'city', string>>
 

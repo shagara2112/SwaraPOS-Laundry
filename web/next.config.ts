@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Logika bisnis bersama dikonsumsi sebagai sumber TypeScript dari workspace.
+  transpilePackages: ["@swarapos/core"],
 };
 
 export default nextConfig;

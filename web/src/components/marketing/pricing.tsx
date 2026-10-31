@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react'
 import { ButtonLink } from '@/components/ui/button'
 import { cn } from '@/lib/cn'
-import { formatRupiah } from '@/lib/format'
+import { formatRupiah } from '@swarapos/core/format'
 
 const PLANS = [
   {

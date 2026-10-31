@@ -1,6 +1,6 @@
 import { toast } from '@/components/ui/toast'
 import { useDemo } from './demo-store'
-import type { ActionError, ActionResult, DemoState } from './state'
+import type { ActionError, ActionResult, DemoState } from '@swarapos/core/store/state'
 
 export const ERROR_MESSAGE: Record<ActionError, string> = {
   NOT_FOUND: 'Data tidak ditemukan. Coba muat ulang halaman.',

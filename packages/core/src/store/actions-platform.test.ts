@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { Actor } from '@/lib/types'
+import type { Actor } from '../types'
 import {
   reviewSubmission,
   setTenantStatus,

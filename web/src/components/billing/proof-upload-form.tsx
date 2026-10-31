@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { validateProofFile } from '@/lib/domain/proof-file'
-import { formatRupiah, parseRupiahID } from '@/lib/format'
+import { validateProofFile } from '@swarapos/core/domain/proof-file'
+import { formatRupiah, parseRupiahID } from '@swarapos/core/format'
 import { act } from '@/lib/store/act'
-import { submitSubscriptionProof } from '@/lib/store/actions-platform'
-import type { PaymentInstruction, SubscriptionInvoice } from '@/lib/types'
+import { submitSubscriptionProof } from '@swarapos/core/store/actions-platform'
+import type { PaymentInstruction, SubscriptionInvoice } from '@swarapos/core/types'
 
 const FILE_ERROR = {
   INVALID_TYPE: 'Format harus JPG, PNG, atau PDF.',

@@ -3,11 +3,11 @@
 import { Ban, CirclePause, TriangleAlert, Truck, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Button, ButtonLink } from '@/components/ui/button'
-import { nextStatuses, requiresReason, STATUS_LABEL } from '@/lib/domain/order-status'
-import { resumeTarget } from '@/lib/selectors'
+import { nextStatuses, requiresReason, STATUS_LABEL } from '@swarapos/core/domain/order-status'
+import { resumeTarget } from '@swarapos/core/selectors'
 import { act } from '@/lib/store/act'
-import { transitionOrder } from '@/lib/store/actions-order'
-import type { Order, OrderStatus } from '@/lib/types'
+import { transitionOrder } from '@swarapos/core/store/actions-order'
+import type { Order, OrderStatus } from '@swarapos/core/types'
 import { ReasonDialog } from './reason-dialog'
 
 const EXCEPTION_META: Partial<Record<OrderStatus, { label: string; title: string; icon: LucideIcon; placeholder: string }>> = {

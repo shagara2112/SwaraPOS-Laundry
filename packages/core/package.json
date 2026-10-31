@@ -1,0 +1,17 @@
+{
+  "name": "@swarapos/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Logika bisnis SwaraPOS Laundry yang dipakai bersama web, aplikasi Android, dan backend.",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "vitest": "^5.0.5"
+  }
+}
