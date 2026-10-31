@@ -1,5 +1,5 @@
 import { formatRupiah } from '@/lib/format'
-import type { OrderStatus, WaEvent } from '@/lib/types'
+import type { HandbackType, OrderStatus, WaEvent } from '@/lib/types'
 
 export type WaContext = {
   customerName: string
@@ -8,6 +8,7 @@ export type WaContext = {
   trackingUrl: string
   /** Sisa tagihan; disebut di pesan bila lebih dari nol. */
   amountDue?: number
+  handback?: HandbackType
 }
 
 export const WA_EVENT_LABEL: Record<WaEvent, string> = {
@@ -56,7 +57,9 @@ export function buildWaMessage(event: WaEvent, ctx: WaContext): string {
     case 'IN_PROCESS':
       return `Halo ${name}, cucian Anda (${orderNo}) mulai kami proses. Lihat perkembangannya di sini: ${url}`
     case 'READY':
-      return `Halo ${name}, cucian Anda (${orderNo}) sudah selesai dan siap diambil di ${outlet}.${total} Detail dan tagihan: ${url}`
+      return ctx.handback === 'DELIVERY'
+        ? `Halo ${name}, cucian Anda (${orderNo}) sudah selesai dan akan segera diantar ke alamat Anda.${total} Detail dan tagihan: ${url}`
+        : `Halo ${name}, cucian Anda (${orderNo}) sudah selesai dan siap diambil di ${outlet}.${total} Detail dan tagihan: ${url}`
     case 'OUT_FOR_DELIVERY':
       return `Halo ${name}, cucian Anda (${orderNo}) sedang diantar kurir kami. Lacak pengantaran di sini: ${url}`
     case 'COMPLETED':

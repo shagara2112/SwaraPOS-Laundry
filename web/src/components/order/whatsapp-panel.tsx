@@ -30,6 +30,7 @@ export function WhatsAppPanel({ order, customer, outlet }: { order: Order; custo
         outletName: outlet.name,
         trackingUrl: trackingUrl(order.trackingToken, window.location.origin),
         amountDue: amountDue(order),
+        handback: order.handback,
       }),
     )
 

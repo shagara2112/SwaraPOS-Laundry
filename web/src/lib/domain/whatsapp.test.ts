@@ -38,6 +38,14 @@ it('menyebut sisa tagihan, bukan total, bila ada', () => {
   expect(buildWaMessage('READY', ctx)).not.toContain('tagihan Rp')
 })
 
+it('pesan siap menyesuaikan cara pengembalian', () => {
+  const ctx = { customerName: 'Dimas', orderNo: 'KMG-1', outletName: 'Outlet Kemang', trackingUrl: 'https://x.test/lacak/abc' }
+  expect(buildWaMessage('READY', { ...ctx, handback: 'SELF_PICKUP' })).toContain('siap diambil di Outlet Kemang')
+  const delivery = buildWaMessage('READY', { ...ctx, handback: 'DELIVERY' })
+  expect(delivery).toContain('segera diantar')
+  expect(delivery).not.toContain('siap diambil')
+})
+
 it('memetakan status ke event WhatsApp', () => {
   expect(waEventForStatus('RECEIVED')).toBe('ORDER_RECEIVED')
   expect(waEventForStatus('IN_WASHING')).toBe('IN_PROCESS')

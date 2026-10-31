@@ -50,14 +50,15 @@ export function FulfillmentPicker({
 }: {
   intake: IntakeType
   handback: HandbackType
-  onChange: (v: { intake: IntakeType; handback: HandbackType }) => void
+  /** Hanya bagian yang berubah, supaya dua klik cepat tidak saling menimpa. */
+  onChange: (patch: { intake?: IntakeType; handback?: HandbackType }) => void
 }) {
   return (
     <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
       <Segmented
         legend="Penerimaan"
         value={intake}
-        onChange={(v) => onChange({ intake: v, handback })}
+        onChange={(v) => onChange({ intake: v })}
         options={[
           { value: 'WALK_IN', label: 'Walk-in', hint: 'Pelanggan menunggu', icon: Footprints },
           { value: 'DROP_OFF', label: 'Drop-off', hint: 'Ditinggal di outlet', icon: PackageOpen },
@@ -67,7 +68,7 @@ export function FulfillmentPicker({
       <Segmented
         legend="Pengembalian"
         value={handback}
-        onChange={(v) => onChange({ intake, handback: v })}
+        onChange={(v) => onChange({ handback: v })}
         options={[
           { value: 'SELF_PICKUP', label: 'Ambil sendiri', hint: 'Di outlet', icon: Store },
           { value: 'DELIVERY', label: 'Diantar', hint: 'Kurir mengantar', icon: Truck },
