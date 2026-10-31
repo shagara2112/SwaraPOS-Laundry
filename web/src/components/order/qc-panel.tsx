@@ -5,11 +5,10 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { act } from '@/lib/store/act'
+import { QC_CHECKLIST } from '@swarapos/core/production'
 import { recordQc, transitionOrder } from '@swarapos/core/store/actions-order'
 import type { Order } from '@swarapos/core/types'
 import { ReasonDialog } from './reason-dialog'
-
-export const QC_CHECKLIST = ['Bersih, noda tertangani', 'Kering sempurna', 'Wangi', 'Terlipat / tersetrika rapi', 'Jumlah item cocok']
 
 /** Panel QC: lulus membuka status siap, gagal mengirim kembali ke cuci ulang. */
 export function QcPanel({ order, size = 'md' }: { order: Order; size?: 'md' | 'xl' }) {

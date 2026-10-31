@@ -1,3 +1,4 @@
+import type { Actor } from '@swarapos/core/types'
 import { useMemo } from 'react'
 import { useDemo } from './demo-store'
 import { useSession } from './session-store'
@@ -30,4 +31,11 @@ export function useCurrentStaff() {
     () => staff.find((x) => x.role === role && x.outletId === outletId) ?? staff.find((x) => x.role === role),
     [staff, role, outletId],
   )
+}
+
+/** Petugas yang tercatat di riwayat order dan audit log untuk aksi dari aplikasi. */
+export function useActor(): Actor {
+  const staff = useCurrentStaff()
+  const fallback = useDemo((s) => s.tenantActor)
+  return useMemo(() => (staff ? { id: staff.id, name: staff.name } : fallback), [staff, fallback])
 }

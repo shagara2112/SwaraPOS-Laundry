@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { act } from '@/store/act'
 import { useDemo } from '@/store/demo-store'
-import { useActiveOutlet, useCustomerMap, useOutletOrders } from '@/store/hooks'
+import { useActiveOutlet, useActor, useCustomerMap, useOutletOrders } from '@/store/hooks'
 import { color, font, radius, space, tone } from '@/theme'
 import { Badge } from '@/ui/Badge'
 import { Button } from '@/ui/Button'
@@ -29,6 +29,7 @@ export function DispatchScreen() {
   const orders = useOutletOrders()
   const customers = useCustomerMap()
   const outlet = useActiveOutlet()
+  const actor = useActor()
   const allTasks = useDemo((s) => s.deliveryTasks)
   const staff = useDemo((s) => s.staff)
   const [type, setType] = useState<'PICKUP' | 'DELIVERY'>('PICKUP')
@@ -63,7 +64,7 @@ export function DispatchScreen() {
               variant="secondary"
               icon={Truck}
               title={`Buat tugas · ${o.orderNo}`}
-              onPress={() => act((s) => transitionOrder(s, o.id, 'OUT_FOR_DELIVERY', {}, s.tenantActor, new Date()), `Tugas antar dibuat untuk ${o.orderNo}`)}
+              onPress={() => act((s) => transitionOrder(s, o.id, 'OUT_FOR_DELIVERY', {}, actor, new Date()), `Tugas antar dibuat untuk ${o.orderNo}`)}
             />
           ))}
         </Card>
@@ -104,7 +105,7 @@ export function DispatchScreen() {
             accessibilityRole="button"
             onPress={() => {
               if (!assigning) return
-              const r = act((s) => assignCourier(s, assigning.id, c.id, s.tenantActor, new Date()), `Ditugaskan ke ${c.name}`)
+              const r = act((s) => assignCourier(s, assigning.id, c.id, actor, new Date()), `Ditugaskan ke ${c.name}`)
               if (r.ok) setAssigning(null)
             }}
           >
