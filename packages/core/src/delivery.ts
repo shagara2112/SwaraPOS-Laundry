@@ -10,7 +10,7 @@ export function isRelevantTask(task: DeliveryTask, order: Order | undefined): bo
 }
 
 /** Tugas milik satu kurir: aktif (masih berjalan dan relevan) dan riwayat (selesai/gagal, terbaru dulu). */
-export function courierTasks(s: DemoState, courierId: string): { active: DeliveryTask[]; history: DeliveryTask[] } {
+export function courierTasks(s: Pick<DemoState, 'deliveryTasks' | 'orders'>, courierId: string): { active: DeliveryTask[]; history: DeliveryTask[] } {
   const orderById = new Map(s.orders.map((o) => [o.id, o]))
   const mine = s.deliveryTasks.filter((t) => t.courierId === courierId)
   const done = (t: DeliveryTask) => t.status === 'DONE' || t.status === 'FAILED'
