@@ -7,6 +7,7 @@ import type {
   InvoiceStatus,
   OrderChannel,
   OrderPaymentMethod,
+  OrderStatus,
   PaymentStatus,
   PricingUnit,
   StaffRole,
@@ -93,6 +94,34 @@ export const SUBMISSION_STATUS: Record<SubmissionStatus, { label: string; tone: 
   AMOUNT_MISMATCH_REVIEW: { label: 'Nominal berbeda', tone: 'warning' },
   APPROVED: { label: 'Disetujui', tone: 'success' },
   REJECTED: { label: 'Ditolak', tone: 'danger' },
+}
+
+const CUSTOMER_STATUS: Record<OrderStatus, string> = {
+  DRAFT: 'Permintaan diterima',
+  REQUESTED: 'Permintaan jemput diterima',
+  PICKUP_ASSIGNED: 'Kurir menuju lokasi Anda',
+  PICKED_UP: 'Cucian sudah dijemput',
+  RECEIVED: 'Diterima di outlet',
+  INSPECTED: 'Sedang diperiksa',
+  WEIGHED_OR_COUNTED: 'Sudah ditimbang',
+  IN_WASHING: 'Sedang dicuci',
+  IN_DRYING: 'Sedang dikeringkan',
+  IN_IRONING: 'Sedang disetrika',
+  IN_FINISHING: 'Sedang dilipat & dikemas',
+  QUALITY_CHECK: 'Pemeriksaan kualitas',
+  READY_FOR_PICKUP: 'Siap diambil di outlet',
+  OUT_FOR_DELIVERY: 'Sedang diantar kurir',
+  DELIVERED: 'Sudah diterima',
+  COMPLETED: 'Selesai',
+  CANCELLED: 'Dibatalkan',
+  ON_HOLD: 'Ditunda sementara',
+  ISSUE_REPORTED: 'Perlu konfirmasi',
+}
+
+/** Label status untuk halaman lacak pelanggan (tanpa istilah internal). */
+export function customerStatusLabel(status: OrderStatus, handback: HandbackType): string {
+  if (status === 'READY_FOR_PICKUP' && handback === 'DELIVERY') return 'Siap diantar'
+  return CUSTOMER_STATUS[status]
 }
 
 export const UNIT_SHORT: Record<PricingUnit, string> = {

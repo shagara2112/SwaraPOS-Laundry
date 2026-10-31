@@ -1,5 +1,5 @@
 import { it, expect } from 'vitest'
-import { formatDueIn, formatLineDetail, formatQty } from './labels'
+import { customerStatusLabel, formatDueIn, formatLineDetail, formatQty } from './labels'
 
 const now = new Date('2026-10-31T03:00:00Z')
 const at = (minutes: number) => new Date(now.getTime() + minutes * 60_000).toISOString()
@@ -16,6 +16,13 @@ it('formatLineDetail tidak menggandakan tanda kali untuk add-on', () => {
   expect(formatLineDetail('KG', 3.5, 7000)).toBe('3,5 kg × Rp7.000')
   expect(formatLineDetail('ADDON', 1, 5000)).toBe('Add-on Rp5.000')
   expect(formatLineDetail('ADDON', 2, 5000)).toBe('2× add-on Rp5.000')
+})
+
+it('customerStatusLabel memakai bahasa pelanggan dan menyesuaikan cara pengembalian', () => {
+  expect(customerStatusLabel('IN_IRONING', 'SELF_PICKUP')).toBe('Sedang disetrika')
+  expect(customerStatusLabel('READY_FOR_PICKUP', 'SELF_PICKUP')).toBe('Siap diambil di outlet')
+  expect(customerStatusLabel('READY_FOR_PICKUP', 'DELIVERY')).toBe('Siap diantar')
+  expect(customerStatusLabel('ISSUE_REPORTED', 'DELIVERY')).toBe('Perlu konfirmasi')
 })
 
 it('formatQty memakai satuan yang sesuai', () => {
