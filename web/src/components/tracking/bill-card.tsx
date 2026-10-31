@@ -1,6 +1,6 @@
 'use client'
 
-import { Banknote, Check, Copy, QrCode, Send } from 'lucide-react'
+import { Banknote, Check, Copy, Landmark, QrCode, Send } from 'lucide-react'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { buttonClasses } from '@/components/ui/button'
@@ -33,7 +33,7 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-const METHOD_ICON = { CASH: Banknote, TRANSFER: Banknote, QRIS: QrCode }
+const METHOD_ICON = { CASH: Banknote, TRANSFER: Landmark, QRIS: QrCode }
 
 export function BillCard({ order, outlet, methods }: { order: Order; outlet: Outlet; methods: OutletPaymentMethod[] }) {
   const due = amountDue(order)
@@ -90,20 +90,30 @@ export function BillCard({ order, outlet, methods }: { order: Order; outlet: Out
       {due > 0 && order.status !== 'CANCELLED' && (
         <div className="mt-5 space-y-3">
           <h3 className="text-sm font-semibold text-fg">Cara bayar</h3>
-          {methods.map((m) => {
-            const Icon = METHOD_ICON[m.type]
-            const account = m.type === 'TRANSFER' ? m.detail.match(/[\d ]{6,}/)?.[0]?.trim() : undefined
-            return (
-              <div key={m.id} className="flex items-start gap-3 rounded-2xl bg-surface-2 p-3">
-                <Icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-fg">{m.label}</p>
-                  <p className="text-sm text-fg-muted">{m.detail}</p>
+          {methods
+            .filter((m) => m.active)
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map((m) => {
+              const Icon = METHOD_ICON[m.type]
+              return (
+                <div key={m.id} className="flex items-start gap-3 rounded-2xl bg-surface-2 p-3">
+                  <Icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-fg">{m.label}</p>
+                    {m.type === 'TRANSFER' && (
+                      <p className="text-sm text-fg">
+                        {m.bankName}
+                        <span className="block whitespace-nowrap font-mono font-semibold">{m.accountNumber}</span>
+                        <span className="block text-fg-muted">a.n. {m.accountName}</span>
+                      </p>
+                    )}
+                    {m.type === 'QRIS' && <p className="text-sm text-fg">Merchant {m.merchantName}</p>}
+                    {m.instructions && <p className="mt-0.5 text-sm text-fg-muted">{m.instructions}</p>}
+                  </div>
+                  {m.type === 'TRANSFER' && m.accountNumber && <CopyButton text={m.accountNumber.replace(/[\s-]/g, '')} />}
                 </div>
-                {account && <CopyButton text={account.replace(/\s/g, '')} />}
-              </div>
-            )
-          })}
+              )
+            })}
           {proofUrl && (
             <a href={proofUrl} target="_blank" rel="noopener noreferrer" className={buttonClasses('secondary', 'lg', 'w-full')}>
               <Send aria-hidden />

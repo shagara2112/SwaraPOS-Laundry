@@ -1,8 +1,9 @@
 'use client'
 
-import { Banknote, Clock, MapPin, Phone, QrCode, Save, UserPlus } from 'lucide-react'
+import { Clock, MapPin, Phone, Save, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { PageHeader } from '@/components/layout/page-header'
+import { PaymentMethodsTab } from '@/components/settings/payment-methods-tab'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
@@ -208,28 +209,6 @@ function ZonesTab() {
         </Button>
       </CardBody>
     </Card>
-  )
-}
-
-function PaymentMethodsTab() {
-  const methods = useDemo((s) => s.outletPaymentMethods)
-  const icon = { CASH: Banknote, TRANSFER: Banknote, QRIS: QrCode }
-  return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {methods.map((m) => {
-        const Icon = icon[m.type]
-        return (
-          <Card key={m.id} className="p-5">
-            <Icon className="size-6 text-primary" aria-hidden />
-            <h3 className="mt-3 font-semibold text-fg">{m.label}</h3>
-            <p className="mt-1 text-sm text-fg-muted">{m.detail}</p>
-          </Card>
-        )
-      })}
-      <p className="text-sm text-fg-subtle md:col-span-3">
-        Pembayaran pelanggan masuk langsung ke rekening/QRIS milik outlet. SwaraPOS hanya mencatat dan membantu verifikasi.
-      </p>
-    </div>
   )
 }
 

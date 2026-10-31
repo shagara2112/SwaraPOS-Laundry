@@ -8,6 +8,7 @@ import {
   updateDeliveryTask,
   updateServicePrice,
   updateZones,
+  upsertOutletPaymentMethod,
 } from './actions-catalog'
 import { transitionOrder } from './actions-order'
 import { createSeed } from './seed'
@@ -142,5 +143,59 @@ describe('sinkron tugas antar-jemput dengan order (review final)', () => {
       ok: false,
       error: 'NOT_ALLOWED',
     })
+  })
+})
+
+describe('metode bayar outlet', () => {
+  const bri = {
+    type: 'TRANSFER' as const,
+    label: 'Transfer BRI',
+    bankName: 'BRI',
+    accountNumber: '0341 0100 0123 301',
+    accountName: 'Rina Wulandari',
+    instructions: 'Sertakan nomor order di berita transfer.',
+    sortOrder: 9,
+    active: true,
+  }
+
+  it('menambah rekening transfer baru dan mencatat audit', () => {
+    const { state, value } = ok(upsertOutletPaymentMethod(s0, bri, actor, now))
+    expect(state.outletPaymentMethods.length).toBe(s0.outletPaymentMethods.length + 1)
+    expect(value).toMatchObject({ label: 'Transfer BRI', accountNumber: '0341 0100 0123 301' })
+    expect(state.platform.audit.at(-1)).toMatchObject({ action: 'outlet_payment_method.created', tenantId: 't1' })
+  })
+
+  it('transfer wajib bank, nama pemilik, dan nomor rekening yang valid', () => {
+    expect(upsertOutletPaymentMethod(s0, { ...bri, accountNumber: '12ab' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(upsertOutletPaymentMethod(s0, { ...bri, accountNumber: '' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(upsertOutletPaymentMethod(s0, { ...bri, bankName: ' ' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(upsertOutletPaymentMethod(s0, { ...bri, accountName: '' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(upsertOutletPaymentMethod(s0, { ...bri, label: '  ' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+  })
+
+  it('QRIS wajib nama merchant', () => {
+    const qris = { type: 'QRIS' as const, label: 'QRIS baru', instructions: '', sortOrder: 9, active: true }
+    expect(upsertOutletPaymentMethod(s0, qris, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(upsertOutletPaymentMethod(s0, { ...qris, merchantName: 'LAUNDRY BERSIH KILAT' }, actor, now).ok).toBe(true)
+  })
+
+  it('mengubah metode yang ada tanpa menambah baris', () => {
+    const existing = s0.outletPaymentMethods.find((m) => m.type === 'TRANSFER')!
+    const { state, value } = ok(upsertOutletPaymentMethod(s0, { ...existing, accountNumber: '731 999 0000' }, actor, now))
+    expect(value.accountNumber).toBe('731 999 0000')
+    expect(state.outletPaymentMethods.length).toBe(s0.outletPaymentMethods.length)
+    expect(state.platform.audit.at(-1)?.action).toBe('outlet_payment_method.updated')
+  })
+
+  it('metode dengan id tidak dikenal ditolak', () => {
+    expect(upsertOutletPaymentMethod(s0, { ...bri, id: 'pm-tidak-ada' }, actor, now)).toEqual({ ok: false, error: 'NOT_FOUND' })
+  })
+
+  it('tidak boleh menonaktifkan metode aktif terakhir', () => {
+    let state = s0
+    const active = s0.outletPaymentMethods.filter((m) => m.active)
+    for (const m of active.slice(0, -1)) state = ok(upsertOutletPaymentMethod(state, { ...m, active: false }, actor, now)).state
+    const last = active.at(-1)!
+    expect(upsertOutletPaymentMethod(state, { ...last, active: false }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
   })
 })

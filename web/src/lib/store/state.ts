@@ -18,13 +18,21 @@ import type {
 } from '@/lib/types'
 
 // Naikkan versi setiap kali bentuk DemoState berubah: migratePersisted hanya memeriksa kerangka atas.
-export const DEMO_STATE_VERSION = 1
+// v2: metode bayar outlet terstruktur (bank, rekening, merchant QRIS, aktif, urutan).
+export const DEMO_STATE_VERSION = 2
 
+/** Cara pelanggan membayar ke outlet; dana masuk langsung ke rekening/QRIS milik owner (PRD §G). */
 export interface OutletPaymentMethod {
   id: string
   type: 'TRANSFER' | 'QRIS' | 'CASH'
   label: string
-  detail: string
+  bankName?: string
+  accountNumber?: string
+  accountName?: string
+  merchantName?: string
+  instructions: string
+  sortOrder: number
+  active: boolean
 }
 
 export interface DemoState {

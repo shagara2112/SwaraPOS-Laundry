@@ -3,7 +3,7 @@ import { formatRupiah } from '@/lib/format'
 import { newId } from '@/lib/ids'
 import type { Actor, Customer, DeliveryTask, DeliveryTaskStatus, DeliveryZone, LatLng, Service } from '@/lib/types'
 import { transitionOrder } from './actions-order'
-import { appendAudit, fail, type ActionResult, type DemoState } from './state'
+import { appendAudit, fail, type ActionResult, type DemoState, type OutletPaymentMethod } from './state'
 
 export function addCustomer(
   s: DemoState,
@@ -148,4 +148,58 @@ export function updateDeliveryTask(
     state = audited(state, actor, now, 'delivery.failed', 'delivery_task', task.id, extra.failReason!.trim())
   }
   return { ok: true, value: updated, state }
+}
+
+const METHOD_LABEL: Record<OutletPaymentMethod['type'], string> = { CASH: 'Tunai', TRANSFER: 'Transfer', QRIS: 'QRIS' }
+
+function validMethod(m: Omit<OutletPaymentMethod, 'id'>): boolean {
+  if (!m.label.trim()) return false
+  if (m.type === 'TRANSFER') {
+    const digits = (m.accountNumber ?? '').replace(/[\s-]/g, '')
+    return !!m.bankName?.trim() && !!m.accountName?.trim() && /^\d{6,20}$/.test(digits)
+  }
+  if (m.type === 'QRIS') return !!m.merchantName?.trim()
+  return true
+}
+
+/** Tambah atau ubah metode bayar outlet. Minimal satu metode harus tetap aktif agar pelanggan tahu cara membayar. */
+export function upsertOutletPaymentMethod(
+  s: DemoState,
+  input: Omit<OutletPaymentMethod, 'id'> & { id?: string },
+  actor: Actor,
+  now: Date,
+): ActionResult<OutletPaymentMethod> {
+  const existing = input.id ? s.outletPaymentMethods.find((m) => m.id === input.id) : undefined
+  if (input.id && !existing) return fail('NOT_FOUND')
+  if (!validMethod(input)) return fail('NOT_ALLOWED')
+
+  const saved: OutletPaymentMethod = {
+    ...input,
+    id: existing?.id ?? newId('pm'),
+    label: input.label.trim(),
+    bankName: input.bankName?.trim() || undefined,
+    accountNumber: input.accountNumber?.trim() || undefined,
+    accountName: input.accountName?.trim() || undefined,
+    merchantName: input.merchantName?.trim() || undefined,
+    instructions: input.instructions.trim(),
+  }
+  const methods = existing ? s.outletPaymentMethods.map((m) => (m.id === saved.id ? saved : m)) : [...s.outletPaymentMethods, saved]
+  if (!methods.some((m) => m.active)) return fail('NOT_ALLOWED')
+
+  const detail = [METHOD_LABEL[saved.type], saved.label, saved.bankName, saved.accountNumber, saved.merchantName, saved.active ? 'aktif' : 'nonaktif']
+    .filter(Boolean)
+    .join(' · ')
+  return {
+    ok: true,
+    value: saved,
+    state: audited(
+      { ...s, outletPaymentMethods: methods },
+      actor,
+      now,
+      existing ? 'outlet_payment_method.updated' : 'outlet_payment_method.created',
+      'outlet_payment_method',
+      saved.id,
+      detail,
+    ),
+  }
 }
