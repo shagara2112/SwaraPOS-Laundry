@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Tabs } from '@/components/ui/tabs'
 import { formatDateTime, formatRupiah } from '@swarapos/core/format'
+import { isRelevantTask } from '@swarapos/core/delivery'
 import { DELIVERY_STATUS } from '@swarapos/core/labels'
 import { act } from '@/lib/store/act'
 import { assignCourier, updateDeliveryTask } from '@swarapos/core/store/actions-catalog'
@@ -95,10 +96,7 @@ export default function PengantaranPage() {
   const orderMap = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders])
   const tasks = allTasks.filter((t) => orderMap.has(t.orderId))
   // Tugas terbuka hanya relevan selama order memang menunggu dijemput/diantar (bukan batal, ditahan, atau sudah lewat).
-  const relevant = (t: DeliveryTask) => {
-    const status = orderMap.get(t.orderId)?.status
-    return t.type === 'PICKUP' ? status === 'REQUESTED' || status === 'PICKUP_ASSIGNED' : status === 'OUT_FOR_DELIVERY'
-  }
+  const relevant = (t: DeliveryTask) => isRelevantTask(t, orderMap.get(t.orderId))
   const inGroup = (t: DeliveryTask, statuses: DeliveryTaskStatus[]) => statuses.includes(t.status) && (t.status === 'DONE' || relevant(t))
   const couriers = staff.filter((s) => s.role === 'COURIER' && s.outletId === activeOutletId)
   const courierName = (id?: string) => staff.find((s) => s.id === id)?.name

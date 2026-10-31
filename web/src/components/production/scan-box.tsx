@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toast'
+import { findOrderByScan } from '@swarapos/core/scan'
 import { cn } from '@/lib/cn'
 import { useDemo } from '@/lib/store/demo-store'
 
@@ -17,8 +18,7 @@ export function ScanBox({ large }: { large: boolean }) {
   const submit = () => {
     const raw = value.trim()
     if (!raw) return
-    const token = raw.includes('/lacak/') ? raw.split('/lacak/')[1].split(/[?#]/)[0] : raw
-    const order = orders.find((o) => o.orderNo.toLowerCase() === raw.toLowerCase() || o.trackingToken === token)
+    const order = findOrderByScan(orders, raw)
     if (!order) {
       toast(`Order "${raw}" tidak ditemukan`, 'error')
       return
