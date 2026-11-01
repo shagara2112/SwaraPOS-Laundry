@@ -7,6 +7,7 @@ export function OrderItemsTable({ order }: { order: Order }) {
   const rows: [string, number][] = [
     ['Subtotal', totals.subtotal],
     ...(totals.expressFee ? ([['Biaya express', totals.expressFee]] as [string, number][]) : []),
+    ...(totals.discount ? ([[order.discount ? `Diskon (${order.discount.reason})` : 'Diskon', -totals.discount]] as [string, number][]) : []),
     ...(totals.pickupFee ? ([['Biaya jemput', totals.pickupFee]] as [string, number][]) : []),
     ...(totals.deliveryFee ? ([['Biaya antar', totals.deliveryFee]] as [string, number][]) : []),
   ]

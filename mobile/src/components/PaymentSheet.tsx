@@ -1,9 +1,9 @@
 import { formatDateTime, formatRupiah, parseRupiahID } from '@swarapos/core/format'
 import { PAYMENT_METHOD_LABEL, PAYMENT_STATUS } from '@swarapos/core/labels'
 import { amountDue, paidAmount } from '@swarapos/core/selectors'
-import { recordPayment } from '@swarapos/core/store/actions-order'
+import { recordPayment, recordRefund } from '@swarapos/core/store/actions-order'
 import type { Actor, Order, OrderPaymentMethod } from '@swarapos/core/types'
-import { HandCoins } from 'lucide-react-native'
+import { HandCoins, Undo2 } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { act } from '@/store/act'
@@ -52,9 +52,12 @@ export function PaymentSheet({ order, actor, methods = OUTLET_METHODS, onClose }
 }
 
 /** Ringkasan pembayaran order dan tombol catat bila peran boleh. */
-export function PaymentPanel({ order, actor, canRecord }: { order: Order; actor: Actor; canRecord: boolean }) {
+export function PaymentPanel({ order, actor, canRecord, canRefund = false }: { order: Order; actor: Actor; canRecord: boolean; canRefund?: boolean }) {
   const [open, setOpen] = useState(false)
+  const [refunding, setRefunding] = useState(false)
   const status = PAYMENT_STATUS[order.paymentStatus]
+  // Kelebihan bayar yang bisa dikembalikan; order batal: seluruh pembayaran.
+  const refundable = paidAmount(order) - (order.status === 'CANCELLED' ? 0 : order.totals.total)
   const due = amountDue(order)
   return (
     <Card style={{ gap: space(3) }}>
@@ -75,14 +78,42 @@ export function PaymentPanel({ order, actor, canRecord }: { order: Order; actor:
       {order.payments.map((p) => (
         <View key={p.id} style={styles.payment}>
           <Text style={styles.paymentMeta}>
+            {p.refund ? 'Refund ' : ''}
             {PAYMENT_METHOD_LABEL[p.method]} · {formatDateTime(p.at)}
+            {p.note ? `\n${p.note}` : ''}
           </Text>
-          <Text style={styles.paymentAmount}>{formatRupiah(p.amount)}</Text>
+          <Text style={[styles.paymentAmount, p.refund && { color: color.danger }]}>{formatRupiah(p.amount)}</Text>
         </View>
       ))}
       {canRecord && due > 0 && order.status !== 'CANCELLED' && <Button title="Catat pembayaran" icon={HandCoins} variant="secondary" onPress={() => setOpen(true)} />}
+      {canRefund && refundable > 0 && <Button title={`Refund ${formatRupiah(refundable)}`} icon={Undo2} variant="secondary" onPress={() => setRefunding(true)} />}
       {open && <PaymentSheet order={order} actor={actor} onClose={() => setOpen(false)} />}
+      {refunding && <RefundSheet order={order} actor={actor} max={refundable} onClose={() => setRefunding(false)} />}
     </Card>
+  )
+}
+
+/** Kembalikan uang pelanggan, maksimal kelebihan bayar; alasan wajib. */
+function RefundSheet({ order, actor, max, onClose }: { order: Order; actor: Actor; max: number; onClose: () => void }) {
+  const [method, setMethod] = useState<OrderPaymentMethod>('CASH')
+  const [amount, setAmount] = useState(String(max))
+  const [reason, setReason] = useState('')
+  const parsed = parseRupiahID(amount)
+  const error = amount.trim() === '' ? undefined : parsed === null ? 'Isi nominal rupiah bulat.' : parsed > max ? `Maksimal ${formatRupiah(max)}.` : undefined
+  const valid = parsed !== null && parsed > 0 && parsed <= max && reason.trim() !== ''
+  const save = () => {
+    if (!valid) return
+    if (act((s) => recordRefund(s, order.id, { method, amount: parsed!, reason }, actor, new Date()), 'Refund tercatat').ok) onClose()
+  }
+  return (
+    <Sheet visible onClose={onClose} title="Refund" description={`${order.orderNo} · maksimal ${formatRupiah(max)}`} footer={<Button title="Catat refund" variant="danger" size="lg" disabled={!valid} onPress={save} />}>
+      <View style={{ gap: space(2) }}>
+        <Text style={styles.label}>Metode pengembalian</Text>
+        <ChipRow items={OUTLET_METHODS.map((m) => ({ id: m, label: PAYMENT_METHOD_LABEL[m] }))} value={method} onChange={setMethod} />
+      </View>
+      <TextField label="Nominal (Rp)" value={amount} onChangeText={setAmount} keyboardType="number-pad" error={error} />
+      <TextField label="Alasan refund" required value={reason} onChangeText={setReason} placeholder="Contoh: order dibatalkan sebelum dicuci" hint="Tercatat di riwayat order, audit log, dan kas masuk." />
+    </Sheet>
   )
 }
 

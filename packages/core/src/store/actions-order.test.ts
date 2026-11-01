@@ -6,6 +6,8 @@ import {
   createOrder,
   markWhatsApp,
   recordPayment,
+  recordRefund,
+  setOrderDiscount,
   recordQc,
   transitionOrder,
   type NewOrderInput,
@@ -290,5 +292,75 @@ describe('serah-terima dengan sisa tagihan (piutang)', () => {
     const o = readyUnpaid()
     const paid = ok(recordPayment(s0, o.id, { method: 'CASH', amount: o.totals.total - o.payments.reduce((x, p) => x + p.amount, 0) }, actor, now))
     expect(ok(transitionOrder(paid.state, o.id, 'COMPLETED', {}, actor, now)).value.status).toBe('COMPLETED')
+  })
+})
+
+describe('diskon order', () => {
+  it('createOrder menyimpan diskon beserta alasannya', () => {
+    const { value } = ok(createOrder(s0, { ...walkIn, discount: { type: 'AMOUNT', value: 4500, reason: 'Pelanggan langganan' } }, actor, now))
+    expect(value.totals.discount).toBe(4500)
+    expect(value.totals.total).toBe(value.totals.subtotal - 4500)
+    expect(value.discount).toEqual({ type: 'AMOUNT', value: 4500, reason: 'Pelanggan langganan' })
+  })
+
+  it('setOrderDiscount menghitung ulang total, wajib alasan, dan tercatat', () => {
+    const created = ok(createOrder(s0, walkIn, actor, now))
+    const { value, state } = ok(setOrderDiscount(created.state, created.value.id, { type: 'PERCENT', value: 10, reason: 'Promo buka' }, actor, now))
+    expect(value.totals.discount).toBe(Math.round(created.value.totals.subtotal * 0.1))
+    expect(value.history.at(-1)).toMatchObject({ label: 'Diskon' })
+    expect(value.history.at(-1)?.note).toContain('Promo buka')
+    expect(state.platform.audit.at(-1)).toMatchObject({ action: 'order.discount', entityId: created.value.id })
+    expect(setOrderDiscount(created.state, created.value.id, { type: 'AMOUNT', value: 1000, reason: ' ' }, actor, now)).toEqual({ ok: false, error: 'REASON_REQUIRED' })
+  })
+
+  it('diskon bisa dihapus, tidak boleh melewati yang sudah dibayar, dan tidak untuk order selesai', () => {
+    const created = ok(createOrder(s0, { ...walkIn, discount: { type: 'AMOUNT', value: 4500, reason: 'x' } }, actor, now))
+    const cleared = ok(setOrderDiscount(created.state, created.value.id, null, actor, now))
+    expect(cleared.value.totals.discount).toBe(0)
+    expect(cleared.value.discount).toBeUndefined()
+    const paid = ok(recordPayment(created.state, created.value.id, { method: 'CASH', amount: created.value.totals.total }, actor, now))
+    expect(setOrderDiscount(paid.state, created.value.id, { type: 'AMOUNT', value: 10000, reason: 'x' }, actor, now)).toEqual({ ok: false, error: 'OVERPAID' })
+    const done = seedOrder('COMPLETED')
+    expect(setOrderDiscount(s0, done.id, { type: 'AMOUNT', value: 1000, reason: 'x' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+  })
+
+  it('koreksi item mempertahankan diskon', () => {
+    const created = ok(createOrder(s0, { ...walkIn, discount: { type: 'PERCENT', value: 10, reason: 'x' } }, actor, now))
+    const line = { itemId: created.value.items[0].id, serviceId: kilo.id, qty: 5 }
+    const { value } = ok(adjustOrderItems(created.state, created.value.id, { lines: [line], reason: 'Timbang ulang' }, actor, now))
+    expect(value.totals.discount).toBe(Math.round(value.totals.subtotal * 0.1))
+  })
+})
+
+describe('refund', () => {
+  const paidOrder = () => {
+    const created = ok(createOrder(s0, walkIn, actor, now))
+    return ok(recordPayment(created.state, created.value.id, { method: 'CASH', amount: created.value.totals.total }, actor, now))
+  }
+
+  it('order batal yang sudah dibayar bisa direfund penuh dan berstatus REFUNDED', () => {
+    const paid = paidOrder()
+    const cancelled = ok(transitionOrder(paid.state, paid.value.id, 'CANCELLED', { reason: 'Pelanggan batal' }, actor, now))
+    const { value, state } = ok(recordRefund(cancelled.state, paid.value.id, { method: 'CASH', amount: paid.value.totals.total, reason: 'Batal sebelum dicuci' }, actor, now))
+    expect(value.payments.at(-1)).toMatchObject({ amount: -paid.value.totals.total, refund: true, method: 'CASH' })
+    expect(value.paymentStatus).toBe('REFUNDED')
+    expect(value.history.at(-1)).toMatchObject({ label: 'Refund' })
+    expect(state.platform.audit.at(-1)).toMatchObject({ action: 'order.refund', entityId: paid.value.id })
+  })
+
+  it('refund dibatasi sebesar kelebihan bayar dan wajib alasan', () => {
+    const paid = paidOrder()
+    expect(recordRefund(paid.state, paid.value.id, { method: 'CASH', amount: 1000, reason: 'x' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    const discounted = { ...paid.state, orders: paid.state.orders }
+    const cancelled = ok(transitionOrder(discounted, paid.value.id, 'CANCELLED', { reason: 'batal' }, actor, now))
+    expect(recordRefund(cancelled.state, paid.value.id, { method: 'CASH', amount: paid.value.totals.total + 1, reason: 'x' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(recordRefund(cancelled.state, paid.value.id, { method: 'CASH', amount: 1000, reason: ' ' }, actor, now)).toEqual({ ok: false, error: 'REASON_REQUIRED' })
+  })
+
+  it('refund sebagian kelebihan bayar pada order aktif mengembalikan status ke lunas', () => {
+    const created = ok(createOrder(s0, walkIn, actor, now))
+    const over = ok(recordPayment(created.state, created.value.id, { method: 'QRIS', amount: created.value.totals.total + 5000 }, actor, now))
+    const { value } = ok(recordRefund(over.state, created.value.id, { method: 'QRIS', amount: 5000, reason: 'Kelebihan transfer' }, actor, now))
+    expect(value.paymentStatus).toBe('PAID')
   })
 })

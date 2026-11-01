@@ -1,10 +1,11 @@
 'use client'
 
-import { ArrowLeft, CalendarClock, MapPin, Pencil, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react'
+import { ArrowLeft, BadgePercent, CalendarClock, MapPin, Pencil, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { AdjustItemsDialog } from '@/components/order/adjust-items-dialog'
+import { DiscountDialog } from '@/components/order/discount-dialog'
 import { OrderItemsTable } from '@/components/order/order-items-table'
 import { OrderLabel } from '@/components/order/order-label'
 import { OrderTimeline } from '@/components/order/order-timeline'
@@ -36,6 +37,7 @@ export default function OrderDetailPage() {
   const [labelOpen, setLabelOpen] = useState(false)
   const [receiptOpen, setReceiptOpen] = useState(false)
   const [adjusting, setAdjusting] = useState(false)
+  const [discounting, setDiscounting] = useState(false)
   const [justCreated, setJustCreated] = useState(false)
 
   // Order baru dari kasir membuka label otomatis (?baru=1).
@@ -119,12 +121,20 @@ export default function OrderDetailPage() {
             <CardHeader
               title="Item & harga"
               action={
-                canAdjustItems(order.status) && (
-                  <Button variant="secondary" size="sm" onClick={() => setAdjusting(true)}>
-                    <Pencil aria-hidden />
-                    Koreksi item
-                  </Button>
-                )
+                <div className="flex flex-wrap gap-2">
+                  {!isTerminal(order.status) && (
+                    <Button variant="secondary" size="sm" onClick={() => setDiscounting(true)}>
+                      <BadgePercent aria-hidden />
+                      Diskon
+                    </Button>
+                  )}
+                  {canAdjustItems(order.status) && (
+                    <Button variant="secondary" size="sm" onClick={() => setAdjusting(true)}>
+                      <Pencil aria-hidden />
+                      Koreksi item
+                    </Button>
+                  )}
+                </div>
               }
             />
             <CardBody className="pt-2">
@@ -184,6 +194,7 @@ export default function OrderDetailPage() {
         </aside>
       </div>
 
+      {discounting && <DiscountDialog order={order} onClose={() => setDiscounting(false)} />}
       {adjusting && <AdjustItemsDialog order={order} onClose={() => setAdjusting(false)} />}
       {receiptOpen && <ReceiptDialog open onClose={() => setReceiptOpen(false)} order={order} outlet={outlet} customer={customer} />}
 

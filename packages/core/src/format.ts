@@ -15,7 +15,8 @@ const timeFormat = new Intl.DateTimeFormat('id-ID', {
 })
 
 export function formatRupiah(amount: number): string {
-  return 'Rp' + Math.round(amount).toLocaleString('id-ID')
+  const value = Math.round(amount)
+  return (value < 0 ? '-Rp' : 'Rp') + Math.abs(value).toLocaleString('id-ID')
 }
 
 export function formatDate(iso: string): string {

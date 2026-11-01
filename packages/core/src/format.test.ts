@@ -53,3 +53,8 @@ describe('parseRupiahID (review final)', () => {
     expect(parseRupiahID('')).toBeNull()
   })
 })
+
+it('formatRupiah menaruh tanda minus di depan Rp', () => {
+  expect(formatRupiah(-2000)).toBe('-Rp2.000')
+  expect(formatRupiah(0)).toBe('Rp0')
+})

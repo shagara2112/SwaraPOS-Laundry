@@ -99,3 +99,10 @@ describe('resolveStaff', () => {
     expect(resolveStaff(s0.staff, { role: 'CASHIER', outletId: 'o-kmg', staffId: 'st-fajar' })?.role).toBe('CASHIER')
   })
 })
+
+describe('amountDue order batal', () => {
+  it('order yang dibatalkan tidak punya sisa tagihan', () => {
+    const o = s0.orders.find((x) => x.status === 'IN_WASHING')!
+    expect(amountDue({ ...o, status: 'CANCELLED', payments: [] })).toBe(0)
+  })
+})

@@ -60,3 +60,11 @@ describe('buildReport', () => {
     expect(empty.days).toHaveLength(2)
   })
 })
+
+describe('buildReport diskon', () => {
+  it('menjumlah diskon order di rentang', () => {
+    const order = s.orders.find((o) => o.outletId === 'o-kmg' && o.status !== 'CANCELLED' && inRange(o.createdAt, week))!
+    const orders = s.orders.map((o) => (o.id === order.id ? { ...o, totals: { ...o.totals, discount: 3000 } } : o))
+    expect(buildReport({ orders, services: s.services }, { range: week, outletId: 'o-kmg', now }).discount).toBe(3000)
+  })
+})

@@ -100,7 +100,7 @@ export default function LaporanPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-            <KpiCard label="Nilai order" value={formatRupiah(report.total)} icon={Wallet} hint={`${report.orders.length} order`} />
+            <KpiCard label="Nilai order" value={formatRupiah(report.total)} icon={Wallet} hint={`${report.orders.length} order${report.discount ? ` · diskon ${formatRupiah(report.discount)}` : ''}`} />
             <KpiCard label="Pelanggan aktif" value={report.active} icon={Users} tone="cyan" />
             <KpiCard label="Pelanggan baru" value={report.newCustomers} icon={UserPlus} tone="success" hint="Order pertama di rentang ini" />
             <KpiCard
@@ -149,6 +149,11 @@ export default function LaporanPage() {
                       </div>
                     ))}
                   </dl>
+                  {cash.refunds.count > 0 && (
+                    <p className="text-sm text-fg-muted">
+                      Termasuk {cash.refunds.count} refund senilai <span className="tabular font-semibold text-danger">{formatRupiah(-cash.refunds.total)}</span>.
+                    </p>
+                  )}
                   {cash.byActor.length === 0 ? (
                     <p className="text-sm text-fg-subtle">Belum ada pembayaran pada rentang ini.</p>
                   ) : (

@@ -46,3 +46,17 @@ describe('cashSummary', () => {
     expect(empty.byMethod.every((m) => m.total === 0)).toBe(true)
   })
 })
+
+describe('cashSummary dengan refund', () => {
+  it('refund mengurangi kas per metode dan dirangkum terpisah', () => {
+    const order = s.orders.find((o) => o.outletId === 'o-kmg' && o.payments.length > 0)!
+    const refund = { id: 'pay-r', method: 'CASH' as const, amount: -5000, at: now.toISOString(), actor: { id: 'st-rina', name: 'Rina' }, refund: true }
+    const orders = s.orders.map((o) => (o.id === order.id ? { ...o, payments: [...o.payments, refund] } : o))
+    const before = cashSummary(s.orders, { range: week, outletId: 'o-kmg' })
+    const after = cashSummary(orders, { range: week, outletId: 'o-kmg' })
+    expect(after.total).toBe(before.total - 5000)
+    expect(after.byMethod.find((m) => m.method === 'CASH')!.total).toBe(before.byMethod.find((m) => m.method === 'CASH')!.total - 5000)
+    expect(after.refunds).toEqual({ total: 5000, count: 1 })
+    expect(before.refunds).toEqual({ total: 0, count: 0 })
+  })
+})

@@ -33,9 +33,10 @@ export function buildReceipt(input: { order: Order; outlet: Outlet; customer: Cu
   const { totals } = order
   const fees = [
     { label: 'Biaya express', amount: totals.expressFee },
+    { label: order.discount ? `Diskon (${order.discount.reason})` : 'Diskon', amount: -(totals.discount ?? 0) },
     { label: 'Biaya jemput', amount: totals.pickupFee },
     { label: 'Biaya antar', amount: totals.deliveryFee },
-  ].filter((f) => f.amount > 0)
+  ].filter((f) => f.amount !== 0)
 
   return {
     businessName: input.businessName,
@@ -53,7 +54,7 @@ export function buildReceipt(input: { order: Order; outlet: Outlet; customer: Cu
     subtotal: totals.subtotal,
     fees,
     total: totals.total,
-    payments: order.payments.map((p) => ({ label: `${PAYMENT_METHOD_LABEL[p.method]} · ${formatDateTime(p.at)}`, amount: p.amount })),
+    payments: order.payments.map((p) => ({ label: `${p.refund ? 'Refund ' : ''}${PAYMENT_METHOD_LABEL[p.method]} · ${formatDateTime(p.at)}`, amount: p.amount })),
     paid: paidAmount(order),
     due: amountDue(order),
     statusLabel: PAYMENT_STATUS[order.paymentStatus].label,

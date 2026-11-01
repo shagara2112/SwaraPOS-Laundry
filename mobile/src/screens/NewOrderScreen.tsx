@@ -10,6 +10,7 @@ import { Camera, Check, Eraser, MapPin, TriangleAlert } from 'lucide-react-nativ
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { CustomerPicker, type NewCustomerInput } from '@/components/CustomerPicker'
+import { DiscountFields } from '@/components/DiscountSheet'
 import { OrderSummaryBar } from '@/components/OrderSummaryBar'
 import { ServicePicker } from '@/components/ServicePicker'
 import { useNow } from '@/lib/use-now'
@@ -236,6 +237,10 @@ function NewOrderForm({ draft, setDraft }: { draft: OrderDraft; setDraft: (fn: (
           </View>
         </Section>
 
+        <Section step={5} title="Diskon (opsional)">
+          <DiscountFields value={draft.discount ?? { type: 'AMOUNT', valueText: '', reason: '' }} onChange={(discount) => update({ discount })} />
+        </Section>
+
         {summaryLines.length > 0 && (
           <Card style={{ gap: space(2) }}>
             <Text style={styles.sectionTitle}>Ringkasan</Text>
@@ -243,6 +248,7 @@ function NewOrderForm({ draft, setDraft }: { draft: OrderDraft; setDraft: (fn: (
               <Row key={`${l.label}-${i}`} label={`${l.label} · ${l.detail}`} value={formatRupiah(l.total)} />
             ))}
             {totals.expressFee > 0 && <Row label={`Express +${expressPct}%`} value={formatRupiah(totals.expressFee)} />}
+            {(totals.discount ?? 0) > 0 && <Row label="Diskon" value={formatRupiah(-(totals.discount ?? 0))} />}
             {totals.pickupFee > 0 && <Row label="Biaya jemput" value={formatRupiah(totals.pickupFee)} />}
             {totals.deliveryFee > 0 && <Row label="Biaya antar" value={formatRupiah(totals.deliveryFee)} />}
             <Row label="Total" value={formatRupiah(totals.total)} strong />

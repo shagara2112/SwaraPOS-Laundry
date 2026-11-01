@@ -10,11 +10,13 @@ import { formatQty } from '../labels'
 import type {
   Actor,
   DeliveryTask,
+  Discount,
   HandbackType,
   IntakeType,
   Order,
   OrderChannel,
   OrderItem,
+  OrderPayment,
   OrderPaymentMethod,
   OrderStatus,
   StatusEvent,
@@ -37,6 +39,7 @@ export type NewOrderInput = {
   distanceKm?: number
   /** TDD §8: create order wajib idempoten terhadap retry dan double-click. */
   idempotencyKey?: string
+  discount?: Discount
 }
 
 const EXCEPTION_STATUSES: OrderStatus[] = ['ON_HOLD', 'ISSUE_REPORTED', 'CANCELLED']
@@ -121,12 +124,14 @@ export function createOrder(
     express: input.express,
     status,
     items,
+    discount: input.discount && input.discount.value > 0 ? input.discount : undefined,
     totals: calculateTotals({
       lines: items,
       express: input.express,
       expressSurchargePct: s.tenant.expressSurchargePct,
       pickupFee: input.pickupFee,
       deliveryFee: input.deliveryFee,
+      discount: input.discount,
     }),
     conditionNotes: input.conditionNotes,
     qcPassed: false,
@@ -306,6 +311,7 @@ export function adjustOrderItems(
     expressSurchargePct: s.tenant.expressSurchargePct,
     pickupFee: order.totals.pickupFee,
     deliveryFee: order.totals.deliveryFee,
+    discount: order.discount,
   })
   const paid = order.payments.reduce((sum, p) => sum + p.amount, 0)
   if (totals.total < paid) return fail('OVERPAID')
@@ -324,11 +330,87 @@ export function adjustOrderItems(
     ...order,
     items,
     totals,
-    paymentStatus: paid === 0 ? 'UNPAID' : paid >= totals.total ? 'PAID' : 'PARTIAL',
+    paymentStatus: paymentStatusFor(order, paid, totals.total),
     history: [...order.history, { id: newId('evt'), from: order.status, to: order.status, actor, at, note, label: 'Koreksi item' }],
     version: order.version + 1,
   }
   const state = appendAudit(replaceOrder(s, updated), { at, actor, action: 'order.items_adjusted', tenantId: s.tenant.id, entity: 'order', entityId: order.id, detail: `${order.orderNo}: ${note}` })
+  return { ok: true, state, value: updated }
+}
+
+/** Status bayar dari total terbayar (bersih setelah refund). */
+function paymentStatusFor(order: Order, paid: number, total: number): Order['paymentStatus'] {
+  if (order.status === 'CANCELLED' && paid <= 0 && order.payments.some((p) => p.refund)) return 'REFUNDED'
+  if (paid <= 0) return 'UNPAID'
+  return paid >= total ? 'PAID' : 'PARTIAL'
+}
+
+/** Beri, ubah, atau hapus (`null`) diskon order. Total tidak boleh turun di bawah yang sudah dibayar. */
+export function setOrderDiscount(s: DemoState, orderId: string, discount: Discount | null, actor: Actor, now: Date): ActionResult<Order> {
+  const order = s.orders.find((o) => o.id === orderId)
+  if (!order) return fail('NOT_FOUND')
+  if (order.status === 'COMPLETED' || order.status === 'CANCELLED') return fail('NOT_ALLOWED')
+  if (discount && !discount.reason.trim()) return fail('REASON_REQUIRED')
+  if (discount && (!(discount.value > 0) || (discount.type === 'PERCENT' && discount.value > 100))) return fail('NOT_ALLOWED')
+
+  const next = discount ? { ...discount, reason: discount.reason.trim() } : undefined
+  const totals = calculateTotals({
+    lines: order.items,
+    express: order.express,
+    expressSurchargePct: s.tenant.expressSurchargePct,
+    pickupFee: order.totals.pickupFee,
+    deliveryFee: order.totals.deliveryFee,
+    discount: next,
+  })
+  const paid = order.payments.reduce((sum, p) => sum + p.amount, 0)
+  if (totals.total < paid) return fail('OVERPAID')
+
+  const at = now.toISOString()
+  const note = next
+    ? `Diskon ${next.type === 'PERCENT' ? `${next.value}% ` : ''}${formatRupiah(totals.discount)}. Total ${formatRupiah(order.totals.total)} → ${formatRupiah(totals.total)}. Alasan: ${next.reason}`
+    : `Diskon dihapus. Total ${formatRupiah(order.totals.total)} → ${formatRupiah(totals.total)}`
+  const updated: Order = {
+    ...order,
+    discount: next,
+    totals,
+    paymentStatus: paymentStatusFor(order, paid, totals.total),
+    history: [...order.history, { id: newId('evt'), from: order.status, to: order.status, actor, at, note, label: 'Diskon' }],
+    version: order.version + 1,
+  }
+  const state = appendAudit(replaceOrder(s, updated), { at, actor, action: 'order.discount', tenantId: s.tenant.id, entity: 'order', entityId: order.id, detail: `${order.orderNo}: ${note}` })
+  return { ok: true, state, value: updated }
+}
+
+/**
+ * Kembalikan uang pelanggan: maksimal kelebihan bayar (seluruh pembayaran bila order batal).
+ * Dicatat sebagai pembayaran minus agar sisa tagihan, nota, dan kas masuk ikut berkurang.
+ */
+export function recordRefund(
+  s: DemoState,
+  orderId: string,
+  input: { method: OrderPaymentMethod; amount: number; reason: string },
+  actor: Actor,
+  now: Date,
+): ActionResult<Order> {
+  const order = s.orders.find((o) => o.id === orderId)
+  if (!order) return fail('NOT_FOUND')
+  const reason = input.reason.trim()
+  if (!reason) return fail('REASON_REQUIRED')
+  const paid = order.payments.reduce((sum, p) => sum + p.amount, 0)
+  const refundable = paid - (order.status === 'CANCELLED' ? 0 : order.totals.total)
+  if (!Number.isInteger(input.amount) || input.amount <= 0 || input.amount > refundable) return fail('NOT_ALLOWED')
+
+  const at = now.toISOString()
+  const refund: OrderPayment = { id: newId('pay'), method: input.method, amount: -input.amount, at, actor, refund: true, note: reason }
+  const withRefund = { ...order, payments: [...order.payments, refund] }
+  const note = `Refund ${formatRupiah(input.amount)}. Alasan: ${reason}`
+  const updated: Order = {
+    ...withRefund,
+    paymentStatus: paymentStatusFor(withRefund, paid - input.amount, order.totals.total),
+    history: [...order.history, { id: newId('evt'), from: order.status, to: order.status, actor, at, note, label: 'Refund' }],
+    version: order.version + 1,
+  }
+  const state = appendAudit(replaceOrder(s, updated), { at, actor, action: 'order.refund', tenantId: s.tenant.id, entity: 'order', entityId: order.id, detail: `${order.orderNo}: ${note}` })
   return { ok: true, state, value: updated }
 }
 

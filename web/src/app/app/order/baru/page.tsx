@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ConditionNotes } from '@/components/cashier/condition-notes'
 import { CustomerPicker, type NewCustomerInput } from '@/components/cashier/customer-picker'
+import { DiscountFields } from '@/components/order/discount-fields'
 import { DeliveryQuoteCard } from '@/components/cashier/delivery-quote-card'
 import { FulfillmentPicker } from '@/components/cashier/fulfillment-picker'
 import { ItemEditor } from '@/components/cashier/item-editor'
@@ -184,6 +185,10 @@ export default function KasirPage() {
 
           <Section step={4} title="Kondisi awal">
             <ConditionNotes value={draft.conditions} onChange={(conditions) => update({ conditions })} />
+          </Section>
+
+          <Section step={5} title="Diskon (opsional)">
+            <DiscountFields idPrefix="draft-discount" value={draft.discount ?? { type: 'AMOUNT', valueText: '', reason: '' }} onChange={(discount) => update({ discount })} />
           </Section>
         </div>
 

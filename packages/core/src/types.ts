@@ -110,6 +110,8 @@ export interface OrderItem {
 export interface OrderTotals {
   subtotal: number
   expressFee: number
+  /** Potongan dari subtotal + express; data lama tanpa field ini berarti 0. */
+  discount?: number
   pickupFee: number
   deliveryFee: number
   total: number
@@ -129,10 +131,16 @@ export interface StatusEvent {
 export interface OrderPayment {
   id: string
   method: OrderPaymentMethod
+  /** Refund dicatat sebagai nominal minus. */
   amount: number
   at: string
   actor: Actor
+  refund?: boolean
+  note?: string
 }
+
+/** Diskon order: nominal rupiah atau persen dari subtotal + express, dengan alasan. */
+export type Discount = { type: 'AMOUNT' | 'PERCENT'; value: number; reason: string }
 
 export interface WaLog {
   id: string
@@ -155,6 +163,7 @@ export interface Order {
   status: OrderStatus
   items: OrderItem[]
   totals: OrderTotals
+  discount?: Discount
   conditionNotes: string[]
   qcPassed: boolean
   paymentStatus: PaymentStatus

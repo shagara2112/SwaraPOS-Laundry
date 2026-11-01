@@ -13,6 +13,8 @@ export type Report = {
   orders: Order[]
   count: number
   total: number
+  /** Total diskon order di rentang. */
+  discount: number
   average: number
   unpaid: number
   days: Datum[]
@@ -73,6 +75,7 @@ export function buildReport(
     orders,
     count: orders.length,
     total,
+    discount: orders.reduce((sum, o) => sum + (o.totals.discount ?? 0), 0),
     average: orders.length ? Math.round(total / orders.length) : 0,
     unpaid: orders.reduce((sum, o) => sum + amountDue(o), 0),
     days,

@@ -4,7 +4,7 @@ import { parseDecimalID, parseRupiahID } from './format'
 import { newId } from './ids'
 import { formatLineDetail } from './labels'
 import type { NewOrderInput } from './store/actions-order'
-import type { Customer, DeliveryZone, HandbackType, IntakeType, OrderTotals, Outlet, Service } from './types'
+import type { Customer, DeliveryZone, Discount, HandbackType, IntakeType, OrderTotals, Outlet, Service } from './types'
 
 export type DraftLine = { key: string; serviceId: string; qtyText: string }
 
@@ -18,6 +18,8 @@ export type OrderDraft = {
   express: boolean
   conditions: string[]
   manualKm: string
+  /** Diskon yang diketik kasir; kosong berarti tanpa diskon. */
+  discount?: { type: Discount['type']; valueText: string; reason: string }
   /** Kunci idempotensi draf: simpan ganda (double-tap, Ctrl+Enter) tetap satu order. */
   key: string
 }
@@ -46,6 +48,8 @@ export type DraftSummary = {
   dueAt: Date | null
   blockers: string[]
   summaryLines: { label: string; detail: string; total: number }[]
+  /** Diskon valid yang akan disimpan ke order. */
+  discount?: Discount
 }
 
 /** Hitung harga, zona, estimasi, dan alasan yang masih memblokir simpan dari draf kasir. */
@@ -75,12 +79,17 @@ export function summarizeDraft(input: {
   const legFee = (kind: 'pickupFee' | 'deliveryFee') => (quote?.status === 'OK' ? quote[kind] : quote?.status === 'NEEDS_CONFIRMATION' ? manualFee : 0)
 
   const price = (svc: Service) => svc.prices[outlet.id] ?? 0
+  const discountText = draft.discount?.valueText.trim() ?? ''
+  const discountValue = !discountText ? null : draft.discount!.type === 'PERCENT' ? parseDecimalID(discountText) : parseRupiahID(discountText)
+  const discountValid = discountValue !== null && discountValue > 0 && (draft.discount!.type !== 'PERCENT' || discountValue <= 100)
+  const discount: Discount | undefined = discountValid && draft.discount!.reason.trim() ? { type: draft.discount!.type, value: discountValue!, reason: draft.discount!.reason.trim() } : undefined
   const totals = calculateTotals({
     lines: valid.map((v) => ({ unit: v.svc.unit, unitPrice: price(v.svc), qty: v.qty })),
     express: draft.express,
     expressSurchargePct: input.expressPct,
     pickupFee: legs.pickup ? legFee('pickupFee') : 0,
     deliveryFee: legs.delivery ? legFee('deliveryFee') : 0,
+    discount: discountValid ? { type: draft.discount!.type, value: discountValue! } : undefined,
   })
   const dueAt = mainLines.length > 0 ? estimateDueAt(input.now, valid.map((v) => v.svc.durationHours), draft.express) : null
 
@@ -91,6 +100,8 @@ export function summarizeDraft(input: {
   if (customer && needsLogistics && !customer.address) blockers.push('Alamat pelanggan wajib untuk jemput/antar')
   if (needsLogistics && distanceKm === null) blockers.push('Isi jarak dari outlet')
   if (quote?.status === 'NEEDS_CONFIRMATION' && (!outsideZone.confirmed || !(manualFee > 0))) blockers.push('Konfirmasi area di luar zona & isi biaya')
+  if (discountText && !discountValid) blockers.push('Diskon tidak valid')
+  if (discountValid && !draft.discount!.reason.trim()) blockers.push('Isi alasan diskon')
 
   const summaryLines = valid.map((v) => ({
     label: v.svc.name,
@@ -98,7 +109,7 @@ export function summarizeDraft(input: {
     total: lineTotal({ unit: v.svc.unit, unitPrice: price(v.svc), qty: v.qty }),
   }))
 
-  return { valid, legs, needsLogistics, distanceKm, quote, totals, dueAt, blockers, summaryLines }
+  return { valid, legs, needsLogistics, distanceKm, quote, totals, dueAt, blockers, summaryLines, discount }
 }
 
 /** Input createOrder dari draf yang sudah lolos `summarizeDraft` (blockers kosong). */
@@ -115,5 +126,6 @@ export function orderInputFromDraft(draft: OrderDraft, summary: DraftSummary, ou
     deliveryFee: summary.totals.deliveryFee,
     distanceKm: summary.distanceKm ?? undefined,
     idempotencyKey: draft.key,
+    discount: summary.discount,
   }
 }

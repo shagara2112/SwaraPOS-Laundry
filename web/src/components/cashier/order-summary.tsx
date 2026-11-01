@@ -56,6 +56,12 @@ export function OrderSummary({
               <dd className="tabular">{formatRupiah(totals.expressFee)}</dd>
             </div>
           )}
+          {(totals.discount ?? 0) > 0 && (
+            <div className="flex justify-between text-phase-done">
+              <dt>Diskon</dt>
+              <dd className="tabular">{formatRupiah(-(totals.discount ?? 0))}</dd>
+            </div>
+          )}
           {totals.pickupFee > 0 && (
             <div className="flex justify-between">
               <dt>Biaya jemput</dt>

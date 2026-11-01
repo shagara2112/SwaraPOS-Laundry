@@ -7,7 +7,7 @@ import { isLate } from '@swarapos/core/selectors'
 import { canAdjustItems } from '@swarapos/core/store/actions-order'
 import type { DeliveryTask } from '@swarapos/core/types'
 import { Redirect, useLocalSearchParams } from 'expo-router'
-import { Bike, CalendarClock, Pencil, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react-native'
+import { BadgePercent, Bike, CalendarClock, Pencil, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { CourierPickerSheet } from '@/components/CourierPickerSheet'
@@ -17,6 +17,7 @@ import { PaymentPanel } from '@/components/PaymentSheet'
 import { QcChecklist } from '@/components/QcChecklist'
 import { ReceiptSheet } from '@/components/ReceiptSheet'
 import { AdjustItemsSheet } from '@/components/AdjustItemsSheet'
+import { DiscountSheet } from '@/components/DiscountSheet'
 import { StatusActions } from '@/components/StatusActions'
 import { StatusBadge } from '@/components/StatusBadge'
 import { TASK_TYPE_LABEL } from '@/components/TaskCard'
@@ -47,6 +48,7 @@ export function OrderDetailScreen() {
   const [assigning, setAssigning] = useState<DeliveryTask | null>(null)
   const [receiptOpen, setReceiptOpen] = useState(false)
   const [adjusting, setAdjusting] = useState(false)
+  const [discounting, setDiscounting] = useState(false)
   // Order baru dari kasir membuka label otomatis (?baru=1).
   const [labelOpen, setLabelOpen] = useState(!!baru)
 
@@ -64,6 +66,7 @@ export function OrderDetailScreen() {
   const fees: [string, number][] = [
     ['Subtotal', totals.subtotal],
     ...(totals.expressFee ? ([['Biaya express', totals.expressFee]] as [string, number][]) : []),
+    ...(totals.discount ? ([[order.discount ? `Diskon (${order.discount.reason})` : 'Diskon', -totals.discount]] as [string, number][]) : []),
     ...(totals.pickupFee ? ([['Biaya jemput', totals.pickupFee]] as [string, number][]) : []),
     ...(totals.deliveryFee ? ([['Biaya antar', totals.deliveryFee]] as [string, number][]) : []),
   ]
@@ -98,7 +101,12 @@ export function OrderDetailScreen() {
 
       <SectionTitle
         title="Item & harga"
-        action={canAdjustItems(order.status) && can(role, 'order.adjust') ? <Button title="Koreksi" icon={Pencil} variant="ghost" onPress={() => setAdjusting(true)} /> : undefined}
+        action={
+          <View style={styles.itemActions}>
+            {!isTerminal(order.status) && can(role, 'order.discount') && <Button title="Diskon" icon={BadgePercent} variant="ghost" onPress={() => setDiscounting(true)} />}
+            {canAdjustItems(order.status) && can(role, 'order.adjust') && <Button title="Koreksi" icon={Pencil} variant="ghost" onPress={() => setAdjusting(true)} />}
+          </View>
+        }
       />
       <Card style={{ gap: space(3) }}>
         {order.items.map((item) => (
@@ -164,7 +172,7 @@ export function OrderDetailScreen() {
 
       <SectionTitle title="Pembayaran & notifikasi" />
       <View style={{ gap: space(3) }}>
-        <PaymentPanel order={order} actor={actor} canRecord={can(role, 'order.payment')} />
+        <PaymentPanel order={order} actor={actor} canRecord={can(role, 'order.payment')} canRefund={can(role, 'order.refund')} />
         {can(role, 'order.whatsapp') && <WhatsAppPanel order={order} customer={customer} outlet={outlet} actor={actor} />}
         {can(role, 'order.payment') && <Button title="Nota" icon={Receipt} variant="secondary" onPress={() => setReceiptOpen(true)} />}
         <Button title="Lihat label & QR lacak" icon={QrCode} variant="secondary" onPress={() => setLabelOpen(true)} />
@@ -176,6 +184,7 @@ export function OrderDetailScreen() {
       </Card>
 
       <CourierPickerSheet task={assigning} title={order.orderNo} onClose={() => setAssigning(null)} />
+      {discounting && <DiscountSheet order={order} actor={actor} onClose={() => setDiscounting(false)} />}
       {adjusting && <AdjustItemsSheet order={order} actor={actor} onClose={() => setAdjusting(false)} />}
       {receiptOpen && <ReceiptSheet visible onClose={() => setReceiptOpen(false)} order={order} outlet={outlet} customer={customer} />}
       <LabelSheet visible={labelOpen} onClose={() => setLabelOpen(false)} order={order} outlet={outlet} customer={customer} justCreated={!!baru} />
@@ -203,6 +212,7 @@ const styles = StyleSheet.create({
   itemTotal: { fontFamily: font.semibold, fontSize: 14, color: color.fg },
   totals: { gap: space(1.5), borderTopWidth: 1, borderTopColor: color.border, paddingTop: space(3) },
   notes: { fontFamily: font.regular, fontSize: 14, color: color.muted },
+  itemActions: { flexDirection: 'row', gap: space(1) },
   taskRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
   taskType: { flex: 1, fontFamily: font.semibold, fontSize: 15, color: color.fg },
 })

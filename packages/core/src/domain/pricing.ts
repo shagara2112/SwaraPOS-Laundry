@@ -14,15 +14,21 @@ export function calculateTotals(input: {
   expressSurchargePct: number
   pickupFee: number
   deliveryFee: number
-}): OrderTotals {
+  discount?: { type: 'AMOUNT' | 'PERCENT'; value: number }
+}): OrderTotals & { discount: number } {
   const subtotal = input.lines.reduce((sum, line) => sum + lineTotal(line), 0)
   const expressFee = input.express ? Math.round((subtotal * input.expressSurchargePct) / 100) : 0
+  // Diskon hanya memotong nilai cucian (subtotal + express), tidak biaya jemput/antar, dan tidak bisa membuat total minus.
+  const base = subtotal + expressFee
+  const raw = !input.discount ? 0 : input.discount.type === 'PERCENT' ? Math.round((base * input.discount.value) / 100) : Math.round(input.discount.value)
+  const discount = Math.min(base, Math.max(0, raw))
   return {
     subtotal,
     expressFee,
+    discount,
     pickupFee: input.pickupFee,
     deliveryFee: input.deliveryFee,
-    total: subtotal + expressFee + input.pickupFee + input.deliveryFee,
+    total: base - discount + input.pickupFee + input.deliveryFee,
   }
 }
 

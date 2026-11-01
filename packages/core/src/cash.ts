@@ -7,7 +7,9 @@ export type CashSummary = {
   count: number
   byMethod: { method: OrderPaymentMethod; label: string; total: number; count: number }[]
   byActor: { id: string; name: string; total: number; count: number }[]
-  payments: { id: string; orderId: string; orderNo: string; customerId: string; method: OrderPaymentMethod; amount: number; at: string; actorId: string; actorName: string }[]
+  /** Refund keluar (nilai positif); sudah dikurangkan dari total dan per metode. */
+  refunds: { total: number; count: number }
+  payments: { id: string; orderId: string; orderNo: string; customerId: string; method: OrderPaymentMethod; amount: number; at: string; actorId: string; actorName: string; refund: boolean }[]
 }
 
 const METHODS: OrderPaymentMethod[] = ['CASH', 'TRANSFER', 'QRIS', 'COD']
@@ -17,7 +19,7 @@ export function cashSummary(orders: Order[], opts: { range: DateRange; outletId:
   const payments = orders
     .filter((o) => opts.outletId === 'all' || o.outletId === opts.outletId)
     .flatMap((o) =>
-      o.payments.map((p) => ({ id: p.id, orderId: o.id, orderNo: o.orderNo, customerId: o.customerId, method: p.method, amount: p.amount, at: p.at, actorId: p.actor.id, actorName: p.actor.name })),
+      o.payments.map((p) => ({ id: p.id, orderId: o.id, orderNo: o.orderNo, customerId: o.customerId, method: p.method, amount: p.amount, at: p.at, actorId: p.actor.id, actorName: p.actor.name, refund: !!p.refund })),
     )
     .filter((p) => inRange(p.at, opts.range) && (!opts.actorId || p.actorId === opts.actorId))
     .sort((a, b) => b.at.localeCompare(a.at))
@@ -36,6 +38,7 @@ export function cashSummary(orders: Order[], opts: { range: DateRange; outletId:
       return { method, label: PAYMENT_METHOD_LABEL[method], total: list.reduce((sum, p) => sum + p.amount, 0), count: list.length }
     }),
     byActor: [...byActor.values()].sort((a, b) => b.total - a.total),
+    refunds: { total: payments.filter((p) => p.refund).reduce((sum, p) => sum - p.amount, 0), count: payments.filter((p) => p.refund).length },
     payments,
   }
 }

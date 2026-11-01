@@ -15,6 +15,8 @@ export function paidAmount(order: Order): number {
 }
 
 export function amountDue(order: Order): number {
+  // Order batal tidak menagih apa pun; kelebihan bayar dikembalikan lewat refund.
+  if (order.status === 'CANCELLED') return 0
   return Math.max(0, order.totals.total - paidAmount(order))
 }
 

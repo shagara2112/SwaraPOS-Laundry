@@ -108,3 +108,25 @@ describe('orderInputFromDraft', () => {
     expect(emptyDraft().key).not.toBe(emptyDraft().key)
   })
 })
+
+describe('diskon di draf kasir', () => {
+  const base = { customerId: noLocation.id, lines: [kilo35] }
+  it('diskon mengurangi total dan ikut ke input order', () => {
+    const draft = { ...emptyDraft(), ...base, discount: { type: 'AMOUNT' as const, valueText: '4.500', reason: 'Langganan' } }
+    const r = summarize(draft)
+    expect(r.totals.discount).toBe(4500)
+    expect(r.totals.total).toBe(24500 - 4500)
+    expect(orderInputFromDraft(draft, r, outlet.id).discount).toEqual({ type: 'AMOUNT', value: 4500, reason: 'Langganan' })
+  })
+
+  it('diskon tanpa alasan atau angka tidak valid memblokir simpan', () => {
+    expect(summarize({ ...base, discount: { type: 'AMOUNT', valueText: '4.500', reason: '' } }).blockers).toContain('Isi alasan diskon')
+    expect(summarize({ ...base, discount: { type: 'PERCENT', valueText: '120', reason: 'x' } }).blockers).toContain('Diskon tidak valid')
+  })
+
+  it('kolom diskon kosong berarti tanpa diskon', () => {
+    const r = summarize({ ...base, discount: { type: 'AMOUNT', valueText: '', reason: '' } })
+    expect(r.totals.discount).toBe(0)
+    expect(r.blockers).toEqual([])
+  })
+})

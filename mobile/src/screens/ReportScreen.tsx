@@ -66,7 +66,7 @@ export function ReportScreen() {
       {report && (
         <>
           <View style={[styles.grid, { marginTop: space(4) }]}>
-            <KpiTile label="Nilai order" value={formatRupiah(report.total)} hint={`${report.count} order`} icon={Wallet} accent={tone.done.fg} />
+            <KpiTile label="Nilai order" value={formatRupiah(report.total)} hint={`${report.count} order${report.discount ? ` · diskon ${formatRupiah(report.discount)}` : ''}`} icon={Wallet} accent={tone.done.fg} />
             <KpiTile label="Rata-rata/order" value={formatRupiah(report.average)} icon={Receipt} />
           </View>
           <View style={[styles.grid, { marginTop: space(3) }]}>
@@ -106,6 +106,7 @@ export function ReportScreen() {
                 {cash.byMethod.map((m) => (
                   <Row key={m.method} label={`${m.label} · ${m.count}`} value={formatRupiah(m.total)} />
                 ))}
+                {cash.refunds.count > 0 && <Row label={`Termasuk refund · ${cash.refunds.count}`} value={formatRupiah(-cash.refunds.total)} />}
                 {cash.byActor.length > 0 && <Text style={[styles.muted, { marginTop: space(2) }]}>Dicatat oleh</Text>}
                 {cash.byActor.map((a) => (
                   <Row key={a.id} label={`${a.name} · ${a.count}`} value={formatRupiah(a.total)} />

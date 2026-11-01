@@ -64,3 +64,13 @@ describe('receiptHtml', () => {
     expect(html).not.toContain('<b>Budi</b>')
   })
 })
+
+describe('nota dengan diskon dan refund', () => {
+  it('menampilkan baris diskon beserta alasan, dan refund sebagai pembayaran minus', () => {
+    const withDisc: Order = { ...partial, totals: { ...partial.totals, discount: 2000 }, discount: { type: 'AMOUNT', value: 2000, reason: 'Langganan' }, payments: [...partial.payments, { id: 'r1', method: 'CASH', amount: -1000, at: now.toISOString(), actor: { id: 'a', name: 'A' }, refund: true }] }
+    const r = build(withDisc)
+    expect(r.fees).toContainEqual({ label: 'Diskon (Langganan)', amount: -2000 })
+    expect(r.payments.at(-1)?.label.startsWith('Refund Tunai')).toBe(true)
+    expect(receiptHtml(r, 58)).toContain('-Rp2.000')
+  })
+})
