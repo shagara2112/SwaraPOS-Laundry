@@ -1,15 +1,18 @@
 'use client'
 
-import { Download, Repeat, UserPlus, Users, Wallet } from 'lucide-react'
+import { CalendarDays, Download, Repeat, UserPlus, Users, Wallet } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { PageHeader } from '@/components/layout/page-header'
 import { ColumnChart, ChartCard, HBarChart } from '@/components/reports/bar-chart'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { DateFilter } from '@/components/ui/date-filter'
+import { EmptyState } from '@/components/ui/empty-state'
 import { KpiCard } from '@/components/ui/kpi-card'
 import { Select } from '@/components/ui/select'
 import { toast } from '@/components/ui/toast'
 import { toCsv } from '@/lib/csv'
-import { presetRange } from '@swarapos/core/date-range'
+import { DATE_PRESETS, dateFilterRange, initialDateFilter } from '@swarapos/core/date-range'
 import { jakartaDateKey } from '@swarapos/core/domain/order-number'
 import { STATUS_LABEL } from '@swarapos/core/domain/order-status'
 import { formatDate, formatRupiah } from '@swarapos/core/format'
@@ -18,7 +21,8 @@ import { buildReport } from '@swarapos/core/report'
 import { useDemo } from '@/lib/store/demo-store'
 import { useNow } from '@/lib/use-now'
 
-const DAY = 24 * 60 * 60 * 1000
+// Laporan selalu punya rentang, jadi tanpa preset "Semua".
+const REPORT_PRESETS = DATE_PRESETS.filter((p) => p.id !== 'all')
 const compact = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt` : n >= 1000 ? `${Math.round(n / 1000)} rb` : String(Math.round(n)))
 
 export default function LaporanPage() {
@@ -27,16 +31,18 @@ export default function LaporanPage() {
   const services = useDemo((s) => s.services)
   const outlets = useDemo((s) => s.outlets)
   const customers = useDemo((s) => s.customers)
-  const [range, setRange] = useState(7)
+  const [dates, setDates] = useState(() => initialDateFilter('7d', new Date()))
   const [outletId, setOutletId] = useState('all')
 
-  const report = useMemo(() => {
-    // Rentang hari WIB penuh: N hari terakhir termasuk hari ini.
-    const today = presetRange('today', now)!
-    return buildReport({ orders, services }, { range: { from: today.from - (range - 1) * DAY, to: today.to }, outletId, now })
-  }, [orders, services, outletId, range, now])
+  const range = useMemo(() => dateFilterRange(dates, now), [dates, now])
+  const report = useMemo(() => (range ? buildReport({ orders, services }, { range, outletId, now }) : null), [orders, services, outletId, range, now])
+  // Hari terakhir rentang = akhir eksklusif dikurangi 1 ms.
+  const lastDay = range ? new Date(range.to - 1) : null
+  const rangeLabel =
+    range && dates.preset === 'custom' ? `${formatDate(new Date(range.from).toISOString())} – ${formatDate(lastDay!.toISOString())}` : (DATE_PRESETS.find((p) => p.id === dates.preset)?.label ?? '')
 
   const exportCsv = () => {
+    if (!report || !range) return
     const name = (id: string) => customers.find((c) => c.id === id)?.name ?? ''
     const csv = toCsv(
       report.orders.map((o) => ({
@@ -54,7 +60,7 @@ export default function LaporanPage() {
     const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url
-    a.download = `order-${jakartaDateKey(now)}-${range}hari.csv`
+    a.download = `order-${jakartaDateKey(new Date(range.from))}_${jakartaDateKey(lastDay!)}.csv`
     a.click()
     URL.revokeObjectURL(url)
     toast(`${report.orders.length} order diekspor ke CSV`)
@@ -64,14 +70,10 @@ export default function LaporanPage() {
     <>
       <PageHeader
         title="Laporan"
-        description={`Nilai order (tidak termasuk batal) · ${range} hari terakhir`}
+        description={range ? `Nilai order (tidak termasuk batal) · ${rangeLabel}` : 'Pilih tanggal awal dan akhir'}
         actions={
           <>
-            <Select value={String(range)} onChange={(e) => setRange(Number(e.target.value))} aria-label="Rentang waktu" className="w-40">
-              <option value="7">7 hari</option>
-              <option value="30">30 hari</option>
-              <option value="90">90 hari</option>
-            </Select>
+            <DateFilter value={dates} onChange={setDates} now={now} presets={REPORT_PRESETS} />
             <Select value={outletId} onChange={(e) => setOutletId(e.target.value)} aria-label="Outlet" className="w-44">
               <option value="all">Semua outlet</option>
               {outlets.map((o) => (
@@ -80,7 +82,7 @@ export default function LaporanPage() {
                 </option>
               ))}
             </Select>
-            <Button variant="secondary" onClick={exportCsv} disabled={report.orders.length === 0}>
+            <Button variant="secondary" onClick={exportCsv} disabled={!report || report.orders.length === 0}>
               <Download aria-hidden />
               Export CSV
             </Button>
@@ -88,35 +90,43 @@ export default function LaporanPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <KpiCard label="Nilai order" value={formatRupiah(report.total)} icon={Wallet} hint={`${report.orders.length} order`} />
-        <KpiCard label="Pelanggan aktif" value={report.active} icon={Users} tone="cyan" />
-        <KpiCard label="Pelanggan baru" value={report.newCustomers} icon={UserPlus} tone="success" hint="Order pertama di rentang ini" />
-        <KpiCard
-          label="Pelanggan repeat"
-          value={report.repeat}
-          icon={Repeat}
-          tone="violet"
-          hint={report.active ? `${Math.round((report.repeat / report.active) * 100)}% dari pelanggan aktif` : undefined}
-        />
-      </div>
+      {!report ? (
+        <Card>
+          <EmptyState icon={CalendarDays} title="Pilih tanggal awal dan akhir" description="Laporan muncul setelah kedua tanggal terisi." />
+        </Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+            <KpiCard label="Nilai order" value={formatRupiah(report.total)} icon={Wallet} hint={`${report.orders.length} order`} />
+            <KpiCard label="Pelanggan aktif" value={report.active} icon={Users} tone="cyan" />
+            <KpiCard label="Pelanggan baru" value={report.newCustomers} icon={UserPlus} tone="success" hint="Order pertama di rentang ini" />
+            <KpiCard
+              label="Pelanggan repeat"
+              value={report.repeat}
+              icon={Repeat}
+              tone="violet"
+              hint={report.active ? `${Math.round((report.repeat / report.active) * 100)}% dari pelanggan aktif` : undefined}
+            />
+          </div>
 
-      <div className="mt-6 grid gap-6">
-        <ChartCard title="Nilai order harian" description="Total order masuk per hari (WIB)" data={report.days} format={formatRupiah}>
-          <ColumnChart data={report.days} format={formatRupiah} formatAxis={compact} />
-        </ChartCard>
-        <div className="grid gap-6 xl:grid-cols-2">
-          <ChartCard title="Per layanan" data={report.byService} format={formatRupiah}>
-            <HBarChart data={report.byService} format={formatRupiah} />
-          </ChartCard>
-          <ChartCard title="Per kanal" data={report.byChannel} format={formatRupiah}>
-            <HBarChart data={report.byChannel} format={formatRupiah} />
-          </ChartCard>
-        </div>
-        <ChartCard title="Produktivitas tahap" description="Jumlah order yang masuk ke tiap tahap pada rentang ini" data={report.byStage} format={(n) => `${n} order`}>
-          <HBarChart data={report.byStage} format={(n) => `${n}`} />
-        </ChartCard>
-      </div>
+          <div className="mt-6 grid gap-6">
+            <ChartCard title="Nilai order harian" description="Total order masuk per hari (WIB)" data={report.days} format={formatRupiah}>
+              <ColumnChart data={report.days} format={formatRupiah} formatAxis={compact} />
+            </ChartCard>
+            <div className="grid gap-6 xl:grid-cols-2">
+              <ChartCard title="Per layanan" data={report.byService} format={formatRupiah}>
+                <HBarChart data={report.byService} format={formatRupiah} />
+              </ChartCard>
+              <ChartCard title="Per kanal" data={report.byChannel} format={formatRupiah}>
+                <HBarChart data={report.byChannel} format={formatRupiah} />
+              </ChartCard>
+            </div>
+            <ChartCard title="Produktivitas tahap" description="Jumlah order yang masuk ke tiap tahap pada rentang ini" data={report.byStage} format={(n) => `${n} order`}>
+              <HBarChart data={report.byStage} format={(n) => `${n}`} />
+            </ChartCard>
+          </div>
+        </>
+      )}
     </>
   )
 }

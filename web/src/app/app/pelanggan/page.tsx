@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Phone, Search, StickyNote, UserPlus, Users } from 'lucide-react'
+import { MapPin, Pencil, Phone, Search, StickyNote, Trash2, UserPlus, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { PageHeader } from '@/components/layout/page-header'
@@ -16,33 +16,36 @@ import { Textarea } from '@/components/ui/textarea'
 import { normalizePhoneID } from '@swarapos/core/domain/whatsapp'
 import { formatDate, formatRupiah } from '@swarapos/core/format'
 import { act } from '@/lib/store/act'
-import { addCustomer } from '@swarapos/core/store/actions-catalog'
+import { addCustomer, deleteCustomer, updateCustomer } from '@swarapos/core/store/actions-catalog'
 import { useDemo } from '@/lib/store/demo-store'
 import type { Customer, Order } from '@swarapos/core/types'
 
 type Row = { customer: Customer; orders: Order[]; spent: number; lastAt?: string }
 
-function AddCustomerDialog({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState({ name: '', phone: '', address: '', notes: '' })
+/** Dialog tambah atau ubah pelanggan; satu nomor WhatsApp tetap milik satu pelanggan. */
+function CustomerDialog({ customer, onClose }: { customer?: Customer; onClose: () => void }) {
+  const [form, setForm] = useState({ name: customer?.name ?? '', phone: customer?.phone ?? '', address: customer?.address ?? '', notes: customer?.notes ?? '' })
   const [touched, setTouched] = useState(false)
   const nameError = touched && !form.name.trim() ? 'Nama wajib diisi.' : undefined
   const phoneError = touched && !normalizePhoneID(form.phone) ? 'Nomor WhatsApp tidak valid.' : undefined
   const save = () => {
     setTouched(true)
-    const r = act((s) => addCustomer(s, form, s.tenantActor, new Date()), 'Pelanggan ditambahkan')
+    const r = customer
+      ? act((s) => updateCustomer(s, customer.id, form, s.tenantActor, new Date()), 'Data pelanggan diperbarui')
+      : act((s) => addCustomer(s, form, s.tenantActor, new Date()), 'Pelanggan ditambahkan')
     if (r.ok) onClose()
   }
   return (
     <Dialog
       open
       onClose={onClose}
-      title="Pelanggan baru"
+      title={customer ? 'Ubah pelanggan' : 'Pelanggan baru'}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
             Batal
           </Button>
-          <Button onClick={save}>Simpan</Button>
+          <Button onClick={save}>{customer ? 'Simpan perubahan' : 'Simpan'}</Button>
         </>
       }
     >
@@ -50,7 +53,7 @@ function AddCustomerDialog({ onClose }: { onClose: () => void }) {
         <Field label="Nama" htmlFor="c-name" required error={nameError}>
           <Input id="c-name" data-autofocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} aria-invalid={!!nameError} />
         </Field>
-        <Field label="WhatsApp" htmlFor="c-phone" required error={phoneError} hint="Nomor yang sama tidak akan dibuat dobel.">
+        <Field label="WhatsApp" htmlFor="c-phone" required error={phoneError} hint="Satu nomor hanya untuk satu pelanggan.">
           <Input id="c-phone" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} aria-invalid={!!phoneError} />
         </Field>
         <Field label="Alamat" htmlFor="c-address" className="sm:col-span-2">
@@ -70,6 +73,8 @@ export default function PelangganPage() {
   const [query, setQuery] = useState('')
   const [adding, setAdding] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [editing, setEditing] = useState<Customer | null>(null)
+  const [deleting, setDeleting] = useState<Customer | null>(null)
 
   const rows: Row[] = useMemo(
     () =>
@@ -147,9 +152,74 @@ export default function PelangganPage() {
         )}
       </Card>
 
-      {adding && <AddCustomerDialog onClose={() => setAdding(false)} />}
+      {adding && <CustomerDialog onClose={() => setAdding(false)} />}
+      {editing && <CustomerDialog customer={editing} onClose={() => setEditing(null)} />}
 
-      <Drawer open={!!open} onClose={() => setOpenId(null)} title={open?.customer.name ?? ''}>
+      <Dialog
+        open={!!deleting}
+        onClose={() => setDeleting(null)}
+        size="sm"
+        title="Hapus pelanggan?"
+        description={deleting ? `${deleting.name} · ${deleting.phone}` : undefined}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleting(null)}>
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                if (deleting && act((s) => deleteCustomer(s, deleting.id, s.tenantActor, new Date()), 'Pelanggan dihapus').ok) setDeleting(null)
+              }}
+            >
+              <Trash2 aria-hidden />
+              Hapus
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-fg-muted">Data pelanggan ini dihapus permanen dari data demo. Tindakan tercatat di audit log.</p>
+      </Dialog>
+
+      <Drawer
+        open={!!open}
+        onClose={() => setOpenId(null)}
+        title={open?.customer.name ?? ''}
+        footer={
+          open && (
+            <div className="w-full space-y-2">
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => {
+                    setEditing(open.customer)
+                    setOpenId(null)
+                  }}
+                >
+                  <Pencil aria-hidden />
+                  Ubah
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="flex-1 text-danger hover:text-danger"
+                  disabled={open.orders.length > 0}
+                  onClick={() => {
+                    setDeleting(open.customer)
+                    setOpenId(null)
+                  }}
+                >
+                  <Trash2 aria-hidden />
+                  Hapus
+                </Button>
+              </div>
+              {open.orders.length > 0 && (
+                <p className="text-xs text-fg-subtle">Punya {open.orders.length} order, jadi tidak bisa dihapus agar riwayat order dan pembayaran tetap utuh.</p>
+              )}
+            </div>
+          )
+        }
+      >
         {open && (
           <div className="space-y-5">
             <div className="space-y-2 text-sm">

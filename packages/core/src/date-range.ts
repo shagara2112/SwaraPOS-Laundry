@@ -54,3 +54,15 @@ export function inRange(iso: string, range: DateRange | null): boolean {
   const t = new Date(iso).getTime()
   return t >= range.from && t < range.to
 }
+
+/** Pilihan filter tanggal di layar; `from`/`to` (`YYYY-MM-DD`) dipakai saat preset `custom`. */
+export type DateFilterValue = { preset: DatePreset; from: string; to: string }
+
+/** Nilai awal filter; "Pilih tanggal" dibuka dengan 7 hari terakhir. */
+export function initialDateFilter(preset: DatePreset, now: Date): DateFilterValue {
+  return { preset, from: jakartaDateKey(new Date(now.getTime() - 6 * DAY)), to: jakartaDateKey(now) }
+}
+
+export function dateFilterRange(value: DateFilterValue, now: Date): DateRange | null {
+  return presetRange(value.preset, now, value)
+}

@@ -9,11 +9,13 @@ import { PHASE_LABEL, StatusBadge } from '@/components/order/status-badge'
 import { Badge } from '@/components/ui/badge'
 import { ButtonLink } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { DateFilter } from '@/components/ui/date-filter'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
 import { cn } from '@/lib/cn'
+import { dateFilterRange, inRange, initialDateFilter } from '@swarapos/core/date-range'
 import { statusPhase } from '@swarapos/core/domain/order-status'
 import { formatRupiah } from '@swarapos/core/format'
 import { formatDueIn, INTAKE_LABEL, PAYMENT_STATUS } from '@swarapos/core/labels'
@@ -38,12 +40,16 @@ export default function OrderListPage() {
   const [phase, setPhase] = useState<StatusPhase | 'all'>('all')
   const [payment, setPayment] = useState('all')
   const [intake, setIntake] = useState('all')
+  const [dates, setDates] = useState(() => initialDateFilter('all', new Date()))
 
   const searched = useMemo(() => {
+    // Tanggal order masuk, batas hari WIB.
+    const range = dateFilterRange(dates, now)
     const q = query.trim().toLowerCase()
     const digits = q.replace(/\D/g, '')
     return [...orders]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .filter((o) => inRange(o.createdAt, range))
       .filter((o) => {
         if (!q) return true
         const c = customers.get(o.customerId)
@@ -55,7 +61,7 @@ export default function OrderListPage() {
       })
       .filter((o) => (payment === 'all' ? true : o.paymentStatus === payment))
       .filter((o) => (intake === 'all' ? true : o.intake === intake))
-  }, [orders, customers, query, payment, intake])
+  }, [orders, customers, query, payment, intake, dates, now])
 
   const visible = phase === 'all' ? searched : searched.filter((o) => statusPhase(o.status) === phase)
   const countFor = (p: StatusPhase) => searched.filter((o) => statusPhase(o.status) === p).length
@@ -64,7 +70,7 @@ export default function OrderListPage() {
     <>
       <PageHeader
         title="Order"
-        description={`${orders.length} order di outlet ini`}
+        description={dates.preset === 'all' ? `${orders.length} order di outlet ini` : `${searched.length} order pada tanggal terpilih`}
         actions={
           <ButtonLink href="/app/order/baru">
             <Plus aria-hidden />
@@ -86,7 +92,8 @@ export default function OrderListPage() {
               aria-label="Cari order"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3 lg:flex">
+          <div className="grid grid-cols-2 gap-3 lg:flex lg:flex-wrap lg:items-center">
+            <DateFilter value={dates} onChange={setDates} now={now} className="col-span-2 lg:col-span-1" />
             <Select value={payment} onChange={(e) => setPayment(e.target.value)} aria-label="Filter pembayaran" className="lg:w-44">
               <option value="all">Semua pembayaran</option>
               {Object.entries(PAYMENT_STATUS)

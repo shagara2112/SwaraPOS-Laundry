@@ -1,5 +1,5 @@
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import { DATE_PRESETS, presetRange, wibDayStart, type DatePreset } from '@swarapos/core/date-range'
+import { DATE_PRESETS, dateFilterRange, wibDayStart, type DateFilterValue } from '@swarapos/core/date-range'
 import { jakartaDateKey } from '@swarapos/core/domain/order-number'
 import { formatDate } from '@swarapos/core/format'
 import { CalendarDays } from 'lucide-react-native'
@@ -7,20 +7,9 @@ import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import { color, font, radius, space } from '@/theme'
 import { ChipRow } from '@/ui/misc'
 
-/** Pilihan filter tanggal; `from`/`to` (`YYYY-MM-DD`) dipakai saat preset `custom`. */
-export type DateFilterValue = { preset: DatePreset; from: string; to: string }
+export { dateFilterRange, initialDateFilter, type DateFilterValue } from '@swarapos/core/date-range'
 
-const DAY = 24 * 60 * 60 * 1000
 const pad = (n: number) => String(n).padStart(2, '0')
-
-/** Nilai awal; "Pilih tanggal" dibuka dengan 7 hari terakhir. */
-export function initialDateFilter(preset: DatePreset, now: Date): DateFilterValue {
-  return { preset, from: jakartaDateKey(new Date(now.getTime() - 6 * DAY)), to: jakartaDateKey(now) }
-}
-
-export function dateFilterRange(value: DateFilterValue, now: Date) {
-  return presetRange(value.preset, now, value)
-}
 
 function DateField({ label, value, onChange, max }: { label: string; value: string; onChange: (day: string) => void; max: string }) {
   const valid = !Number.isNaN(wibDayStart(value))

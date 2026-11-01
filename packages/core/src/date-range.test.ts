@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { inRange, presetRange } from './date-range'
+import { dateFilterRange, inRange, initialDateFilter, presetRange } from './date-range'
 
 const wib = (day: string) => Date.parse(`${day}T00:00:00+07:00`)
 const DAY = 24 * 60 * 60 * 1000
@@ -46,5 +46,17 @@ describe('inRange', () => {
     expect(inRange('2026-10-31T16:59:59.000Z', range)).toBe(true)
     expect(inRange('2026-10-31T17:00:00.000Z', range)).toBe(false) // 1 Nov 00.00 WIB
     expect(inRange('2020-01-01T00:00:00.000Z', null)).toBe(true)
+  })
+})
+
+describe('initialDateFilter & dateFilterRange', () => {
+  it('pilihan tanggal sendiri diawali 7 hari terakhir WIB', () => {
+    expect(initialDateFilter('all', now)).toEqual({ preset: 'all', from: '2026-10-25', to: '2026-10-31' })
+  })
+
+  it('rentang mengikuti preset; preset custom memakai from/to', () => {
+    expect(dateFilterRange({ preset: 'today', from: '', to: '' }, now)).toEqual(presetRange('today', now))
+    expect(dateFilterRange({ preset: 'custom', from: '2026-10-28', to: '2026-10-30' }, now)).toEqual({ from: wib('2026-10-28'), to: wib('2026-10-31') })
+    expect(dateFilterRange(initialDateFilter('all', now), now)).toBeNull()
   })
 })
