@@ -6,9 +6,10 @@ import { createOrder } from '@swarapos/core/store/actions-order'
 import { parseStoredJson } from '@swarapos/core/store/state'
 import type { HandbackType, IntakeType } from '@swarapos/core/types'
 import { router } from 'expo-router'
-import { Camera, Check, Eraser, MapPin, TriangleAlert } from 'lucide-react-native'
+import { Check, Eraser, MapPin, TriangleAlert } from 'lucide-react-native'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ConditionPhotos } from '@/components/ConditionPhotos'
 import { CustomerPicker, type NewCustomerInput } from '@/components/CustomerPicker'
 import { DiscountFields } from '@/components/DiscountSheet'
 import { OrderSummaryBar } from '@/components/OrderSummaryBar'
@@ -231,10 +232,19 @@ function NewOrderForm({ draft, setDraft }: { draft: OrderDraft; setDraft: (fn: (
               )
             })}
           </View>
-          <View style={styles.photo}>
-            <Camera size={18} color={color.subtle} />
-            <Text style={styles.muted}>Foto kondisi awal menyusul di versi produksi.</Text>
-          </View>
+          <TextField
+            label="Jumlah potong (opsional)"
+            value={draft.pieceCountText ?? ''}
+            onChangeText={(pieceCountText) => update({ pieceCountText })}
+            keyboardType="number-pad"
+            placeholder="15"
+            hint="Dicocokkan saat QC dan tercetak di label serta nota."
+          />
+          <ConditionPhotos
+            uris={draft.photos ?? []}
+            onAdd={(uri) => update({ photos: [...(draft.photos ?? []), uri] })}
+            onRemove={(uri) => update({ photos: (draft.photos ?? []).filter((x) => x !== uri) })}
+          />
         </Section>
 
         <Section step={5} title="Diskon (opsional)">
@@ -294,5 +304,4 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space(2) },
   chip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space(4), borderRadius: radius.full, borderWidth: 1, borderColor: color.border },
   chipText: { fontFamily: font.medium, fontSize: 14, color: color.muted },
-  photo: { flexDirection: 'row', alignItems: 'center', gap: space(2), padding: space(3), borderRadius: radius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: color.borderStrong },
 })

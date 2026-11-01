@@ -5,14 +5,15 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { act } from '@/lib/store/act'
-import { QC_CHECKLIST } from '@swarapos/core/production'
+import { qcChecklistFor } from '@swarapos/core/production'
 import { recordQc, transitionOrder } from '@swarapos/core/store/actions-order'
 import type { Order } from '@swarapos/core/types'
 import { ReasonDialog } from './reason-dialog'
 
 /** Panel QC: lulus membuka status siap, gagal mengirim kembali ke cuci ulang. */
 export function QcPanel({ order, size = 'md' }: { order: Order; size?: 'md' | 'xl' }) {
-  const [checked, setChecked] = useState<boolean[]>(QC_CHECKLIST.map(() => false))
+  const checklist = qcChecklistFor(order)
+  const [checked, setChecked] = useState<boolean[]>(checklist.map(() => false))
   const [failOpen, setFailOpen] = useState(false)
   const allChecked = checked.every(Boolean)
 
@@ -42,7 +43,7 @@ export function QcPanel({ order, size = 'md' }: { order: Order; size?: 'md' | 'x
       />
       <CardBody>
         <ul className="grid gap-2 sm:grid-cols-2">
-          {QC_CHECKLIST.map((label, i) => (
+          {checklist.map((label, i) => (
             <li key={label}>
               <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-border px-3 text-sm font-medium text-fg hover:bg-surface-2">
                 <input

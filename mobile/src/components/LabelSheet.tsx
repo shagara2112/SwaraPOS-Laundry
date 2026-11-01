@@ -27,6 +27,7 @@ export function LabelSheet({ visible, onClose, order, outlet, customer, justCrea
         <View style={styles.meta}>
           <Text style={styles.line}>Masuk: {formatDateTime(order.createdAt)}</Text>
           <Text style={[styles.line, { fontFamily: font.bold }]}>Estimasi: {formatDateTime(order.dueAt)}</Text>
+          {order.pieceCount ? <Text style={[styles.line, { fontFamily: font.bold }]}>Jumlah: {order.pieceCount} pcs</Text> : null}
           {order.items.map((i) => (
             <Text key={i.id} style={styles.line}>
               {i.name} — {formatQty(i.unit, i.qty)}

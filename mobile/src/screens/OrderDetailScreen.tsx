@@ -4,7 +4,7 @@ import { formatDateTime, formatRupiah } from '@swarapos/core/format'
 import { CHANNEL_LABEL, DELIVERY_STATUS, formatDueIn, formatLineDetail, HANDBACK_LABEL, INTAKE_LABEL } from '@swarapos/core/labels'
 import { can } from '@swarapos/core/permissions'
 import { isLate } from '@swarapos/core/selectors'
-import { canAdjustItems } from '@swarapos/core/store/actions-order'
+import { addConditionPhotos, canAdjustItems } from '@swarapos/core/store/actions-order'
 import type { DeliveryTask } from '@swarapos/core/types'
 import { Redirect, useLocalSearchParams } from 'expo-router'
 import { BadgePercent, Bike, CalendarClock, Pencil, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react-native'
@@ -17,12 +17,14 @@ import { PaymentPanel } from '@/components/PaymentSheet'
 import { QcChecklist } from '@/components/QcChecklist'
 import { ReceiptSheet } from '@/components/ReceiptSheet'
 import { AdjustItemsSheet } from '@/components/AdjustItemsSheet'
+import { ConditionPhotos } from '@/components/ConditionPhotos'
 import { DiscountSheet } from '@/components/DiscountSheet'
 import { StatusActions } from '@/components/StatusActions'
 import { StatusBadge } from '@/components/StatusBadge'
 import { TASK_TYPE_LABEL } from '@/components/TaskCard'
 import { WhatsAppPanel } from '@/components/WhatsAppPanel'
 import { useNow } from '@/lib/use-now'
+import { act } from '@/store/act'
 import { useDemo } from '@/store/demo-store'
 import { useActor } from '@/store/hooks'
 import { useSession } from '@/store/session-store'
@@ -126,10 +128,10 @@ export function OrderDetailScreen() {
         </View>
       </Card>
 
-      {(order.conditionNotes.length > 0 || customer.notes) && (
-        <>
-          <SectionTitle title="Catatan kondisi & preferensi" />
+      <>
+          <SectionTitle title="Kondisi & preferensi" />
           <Card style={{ gap: space(2.5) }}>
+            {order.pieceCount ? <Row label="Jumlah potong" value={`${order.pieceCount} pcs`} /> : null}
             {order.conditionNotes.length > 0 && (
               <View style={styles.badges}>
                 {order.conditionNotes.map((n) => (
@@ -138,9 +140,12 @@ export function OrderDetailScreen() {
               </View>
             )}
             {customer.notes && <Text style={styles.notes}>{customer.notes}</Text>}
+            <ConditionPhotos
+              uris={(order.conditionPhotos ?? []).map((p) => p.uri)}
+              onAdd={role !== 'COURIER' ? (uri) => act((s) => addConditionPhotos(s, order.id, [uri], actor, new Date()), 'Foto kondisi ditambahkan') : undefined}
+            />
           </Card>
         </>
-      )}
 
       {tasks.length > 0 && (
         <>

@@ -20,6 +20,10 @@ export type OrderDraft = {
   manualKm: string
   /** Diskon yang diketik kasir; kosong berarti tanpa diskon. */
   discount?: { type: Discount['type']; valueText: string; reason: string }
+  /** Jumlah potong yang diketik; kosong berarti tidak dicatat. */
+  pieceCountText?: string
+  /** URI foto kondisi awal di perangkat kasir. */
+  photos?: string[]
   /** Kunci idempotensi draf: simpan ganda (double-tap, Ctrl+Enter) tetap satu order. */
   key: string
 }
@@ -50,6 +54,7 @@ export type DraftSummary = {
   summaryLines: { label: string; detail: string; total: number }[]
   /** Diskon valid yang akan disimpan ke order. */
   discount?: Discount
+  pieceCount?: number
 }
 
 /** Hitung harga, zona, estimasi, dan alasan yang masih memblokir simpan dari draf kasir. */
@@ -101,6 +106,9 @@ export function summarizeDraft(input: {
   if (needsLogistics && distanceKm === null) blockers.push('Isi jarak dari outlet')
   if (quote?.status === 'NEEDS_CONFIRMATION' && (!outsideZone.confirmed || !(manualFee > 0))) blockers.push('Konfirmasi area di luar zona & isi biaya')
   if (discountText && !discountValid) blockers.push('Diskon tidak valid')
+  const pieceText = draft.pieceCountText?.trim() ?? ''
+  const pieceCount = /^\d+$/.test(pieceText) && Number(pieceText) > 0 ? Number(pieceText) : undefined
+  if (pieceText && !pieceCount) blockers.push('Jumlah potong tidak valid')
   if (discountValid && !draft.discount!.reason.trim()) blockers.push('Isi alasan diskon')
 
   const summaryLines = valid.map((v) => ({
@@ -109,7 +117,7 @@ export function summarizeDraft(input: {
     total: lineTotal({ unit: v.svc.unit, unitPrice: price(v.svc), qty: v.qty }),
   }))
 
-  return { valid, legs, needsLogistics, distanceKm, quote, totals, dueAt, blockers, summaryLines, discount }
+  return { valid, legs, needsLogistics, distanceKm, quote, totals, dueAt, blockers, summaryLines, discount, pieceCount }
 }
 
 /** Input createOrder dari draf yang sudah lolos `summarizeDraft` (blockers kosong). */
@@ -127,5 +135,7 @@ export function orderInputFromDraft(draft: OrderDraft, summary: DraftSummary, ou
     distanceKm: summary.distanceKm ?? undefined,
     idempotencyKey: draft.key,
     discount: summary.discount,
+    pieceCount: summary.pieceCount,
+    conditionPhotos: draft.photos?.length ? draft.photos : undefined,
   }
 }

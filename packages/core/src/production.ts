@@ -19,6 +19,11 @@ export const HOLD_STATUSES: OrderStatus[] = ['ON_HOLD', 'ISSUE_REPORTED']
 /** Poin yang wajib dicentang sebelum QC lulus. */
 export const QC_CHECKLIST = ['Bersih, noda tertangani', 'Kering sempurna', 'Wangi', 'Terlipat / tersetrika rapi', 'Jumlah item cocok']
 
+/** Checklist QC untuk satu order; poin jumlah item menyebut jumlah potong saat diterima. */
+export function qcChecklistFor(order: Order): string[] {
+  return QC_CHECKLIST.map((label, i) => (i === QC_CHECKLIST.length - 1 && order.pieceCount ? `${label} (${order.pieceCount} pcs)` : label))
+}
+
 /** Status maju yang menjadi tombol utama. QC tidak punya tombol maju karena memakai checklist. */
 export function primaryNext(order: Order): OrderStatus | undefined {
   if (order.status === 'QUALITY_CHECK') return undefined

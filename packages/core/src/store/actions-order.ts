@@ -40,6 +40,9 @@ export type NewOrderInput = {
   /** TDD §8: create order wajib idempoten terhadap retry dan double-click. */
   idempotencyKey?: string
   discount?: Discount
+  pieceCount?: number
+  /** URI foto kondisi awal di perangkat kasir. */
+  conditionPhotos?: string[]
 }
 
 const EXCEPTION_STATUSES: OrderStatus[] = ['ON_HOLD', 'ISSUE_REPORTED', 'CANCELLED']
@@ -125,6 +128,8 @@ export function createOrder(
     status,
     items,
     discount: input.discount && input.discount.value > 0 ? input.discount : undefined,
+    pieceCount: input.pieceCount && input.pieceCount > 0 ? input.pieceCount : undefined,
+    conditionPhotos: input.conditionPhotos?.length ? input.conditionPhotos.map((uri) => ({ uri, at: now.toISOString(), actor })) : undefined,
     totals: calculateTotals({
       lines: items,
       express: input.express,
@@ -280,7 +285,7 @@ export function canAdjustItems(status: OrderStatus): boolean {
 export function adjustOrderItems(
   s: DemoState,
   orderId: string,
-  input: { lines: { itemId?: string; serviceId: string; qty: number }[]; reason: string },
+  input: { lines: { itemId?: string; serviceId: string; qty: number }[]; pieceCount?: number | null; reason: string },
   actor: Actor,
   now: Date,
 ): ActionResult<Order> {
@@ -315,6 +320,9 @@ export function adjustOrderItems(
   })
   const paid = order.payments.reduce((sum, p) => sum + p.amount, 0)
   if (totals.total < paid) return fail('OVERPAID')
+  if (input.pieceCount != null && !(Number.isInteger(input.pieceCount) && input.pieceCount > 0)) return fail('NOT_ALLOWED')
+  // undefined = tidak diubah, null = dihapus.
+  const pieceCount = input.pieceCount === undefined ? order.pieceCount : (input.pieceCount ?? undefined)
 
   const changes = [
     ...order.items.flatMap((old) => {
@@ -323,6 +331,7 @@ export function adjustOrderItems(
       return next.qty !== old.qty ? [`${old.name} ${formatQty(old.unit, old.qty)} → ${formatQty(next.unit, next.qty)}`] : []
     }),
     ...items.filter((i) => !order.items.some((old) => old.id === i.id)).map((i) => `Tambah ${i.name} ${formatQty(i.unit, i.qty)}`),
+    ...(pieceCount !== order.pieceCount ? [`Jumlah potong ${order.pieceCount ?? '-'} → ${pieceCount ?? '-'} pcs`] : []),
   ]
   const at = now.toISOString()
   const note = `${changes.join('; ') || 'Tanpa perubahan jumlah'}. Total ${formatRupiah(order.totals.total)} → ${formatRupiah(totals.total)}. Alasan: ${reason}`
@@ -330,6 +339,7 @@ export function adjustOrderItems(
     ...order,
     items,
     totals,
+    pieceCount,
     paymentStatus: paymentStatusFor(order, paid, totals.total),
     history: [...order.history, { id: newId('evt'), from: order.status, to: order.status, actor, at, note, label: 'Koreksi item' }],
     version: order.version + 1,
@@ -412,6 +422,19 @@ export function recordRefund(
   }
   const state = appendAudit(replaceOrder(s, updated), { at, actor, action: 'order.refund', tenantId: s.tenant.id, entity: 'order', entityId: order.id, detail: `${order.orderNo}: ${note}` })
   return { ok: true, state, value: updated }
+}
+
+const MAX_CONDITION_PHOTOS = 6
+
+/** Tambah foto kondisi order (maksimal 6 per order). */
+export function addConditionPhotos(s: DemoState, orderId: string, uris: string[], actor: Actor, now: Date): ActionResult<Order> {
+  const order = s.orders.find((o) => o.id === orderId)
+  if (!order) return fail('NOT_FOUND')
+  const current = order.conditionPhotos ?? []
+  if (uris.length === 0 || current.length + uris.length > MAX_CONDITION_PHOTOS) return fail('NOT_ALLOWED')
+  const at = now.toISOString()
+  const updated: Order = { ...order, conditionPhotos: [...current, ...uris.map((uri) => ({ uri, at, actor }))], version: order.version + 1 }
+  return { ok: true, state: replaceOrder(s, updated), value: updated }
 }
 
 export function recordQc(

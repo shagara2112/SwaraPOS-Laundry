@@ -24,6 +24,8 @@ export function AdjustItemsSheet({ order, actor, onClose }: { order: Order; acto
   const expressPct = useDemo((s) => s.tenant.expressSurchargePct)
   const [lines, setLines] = useState<Line[]>(() => order.items.map((i) => ({ key: i.id, itemId: i.id, serviceId: i.serviceId, qtyText: String(i.qty).replace('.', ',') })))
   const [reason, setReason] = useState('')
+  const [pieceText, setPieceText] = useState(order.pieceCount ? String(order.pieceCount) : '')
+  const pieceCount = /^\d+$/.test(pieceText.trim()) && Number(pieceText) > 0 ? Number(pieceText) : null
   const [adding, setAdding] = useState(false)
 
   const parsed = lines.map((l) => {
@@ -50,12 +52,13 @@ export function AdjustItemsSheet({ order, actor, onClose }: { order: Order; acto
     !parsed.some((p) => p.unit !== 'ADDON') && 'minimal satu layanan utama',
     totals.total < paid && `total di bawah yang sudah dibayar (${formatRupiah(paid)})`,
     !reason.trim() && 'alasan wajib',
+    pieceText.trim() !== '' && pieceCount === null && 'jumlah potong tidak valid',
   ].filter(Boolean) as string[]
 
   const save = () => {
     if (blockers.length) return
     const r = act(
-      (s) => adjustOrderItems(s, order.id, { lines: parsed.map((p) => ({ itemId: p.line.itemId, serviceId: p.line.serviceId, qty: p.qty! })), reason }, actor, new Date()),
+      (s) => adjustOrderItems(s, order.id, { lines: parsed.map((p) => ({ itemId: p.line.itemId, serviceId: p.line.serviceId, qty: p.qty! })), pieceCount, reason }, actor, new Date()),
       'Item order dikoreksi',
     )
     if (r.ok) onClose()
@@ -133,6 +136,7 @@ export function AdjustItemsSheet({ order, actor, onClose }: { order: Order; acto
         <Row label="Sudah dibayar" value={formatRupiah(paid)} />
       </View>
 
+      <TextField label="Jumlah potong" value={pieceText} onChangeText={setPieceText} keyboardType="number-pad" placeholder="15" hint="Kosongkan bila tidak dihitung." />
       <TextField label="Alasan koreksi" required value={reason} onChangeText={setReason} placeholder="Contoh: timbang ulang di outlet" hint="Tercatat di riwayat order dan audit log." multiline />
     </Sheet>
   )

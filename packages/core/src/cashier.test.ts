@@ -130,3 +130,19 @@ describe('diskon di draf kasir', () => {
     expect(r.blockers).toEqual([])
   })
 })
+
+describe('jumlah potong dan foto di draf kasir', () => {
+  const base = { customerId: noLocation.id, lines: [kilo35] }
+  it('jumlah potong bilangan bulat ikut ke input order bersama foto', () => {
+    const draft = { ...emptyDraft(), ...base, pieceCountText: '15', photos: ['file:///a.jpg'] }
+    const r = summarize(draft)
+    expect(r.blockers).toEqual([])
+    expect(orderInputFromDraft(draft, r, outlet.id)).toMatchObject({ pieceCount: 15, conditionPhotos: ['file:///a.jpg'] })
+  })
+
+  it('jumlah potong bukan bilangan bulat positif memblokir simpan; kosong boleh', () => {
+    expect(summarize({ ...base, pieceCountText: '2,5' }).blockers).toContain('Jumlah potong tidak valid')
+    expect(summarize({ ...base, pieceCountText: '0' }).blockers).toContain('Jumlah potong tidak valid')
+    expect(summarize({ ...base, pieceCountText: '' }).blockers).toEqual([])
+  })
+})

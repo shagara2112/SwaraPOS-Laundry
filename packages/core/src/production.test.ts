@@ -1,5 +1,5 @@
 import { it, expect } from 'vitest'
-import { primaryNext, sortForProduction } from './production'
+import { primaryNext, qcChecklistFor, sortForProduction } from './production'
 import { createSeed } from './store/seed'
 import type { Order } from './types'
 
@@ -32,4 +32,9 @@ it('urutan papan produksi: terlambat, lalu express, lalu jatuh tempo terdekat', 
   const mk = (id: string, dueH: number, express = false): Order => ({ ...base, id, status: 'IN_WASHING', express, dueAt: at(dueH) })
   const sorted = sortForProduction([mk('later', 10), mk('express', 20, true), mk('late', -2), mk('soon', 3)], now)
   expect(sorted.map((o) => o.id)).toEqual(['late', 'express', 'soon', 'later'])
+})
+
+it('checklist QC menyebut jumlah potong bila dicatat', () => {
+  expect(qcChecklistFor({ ...base, pieceCount: 15 }).at(-1)).toBe('Jumlah item cocok (15 pcs)')
+  expect(qcChecklistFor({ ...base, pieceCount: undefined }).at(-1)).toBe('Jumlah item cocok')
 })

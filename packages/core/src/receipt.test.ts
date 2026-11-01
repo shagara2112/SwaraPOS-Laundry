@@ -74,3 +74,10 @@ describe('nota dengan diskon dan refund', () => {
     expect(receiptHtml(r, 58)).toContain('-Rp2.000')
   })
 })
+
+describe('nota dengan jumlah potong', () => {
+  it('menampilkan jumlah potong bila dicatat', () => {
+    expect(build({ ...partial, pieceCount: 15 }).pieceCount).toBe(15)
+    expect(receiptHtml(build({ ...partial, pieceCount: 15 }), 58)).toContain('15 pcs')
+  })
+})

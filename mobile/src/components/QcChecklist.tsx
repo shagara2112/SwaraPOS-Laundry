@@ -1,4 +1,4 @@
-import { QC_CHECKLIST } from '@swarapos/core/production'
+import { qcChecklistFor } from '@swarapos/core/production'
 import { recordQc, transitionOrder } from '@swarapos/core/store/actions-order'
 import type { Actor, Order } from '@swarapos/core/types'
 import { Check, RotateCcw, ShieldCheck } from 'lucide-react-native'
@@ -12,7 +12,8 @@ import { ReasonSheet } from '@/ui/Sheet'
 
 /** Checklist QC: lulus membuka status siap, gagal mengirim kembali ke cuci ulang. Beri `key={order.version}` agar centang direset. */
 export function QcChecklist({ order, actor, size = 'lg' }: { order: Order; actor: Actor; size?: 'lg' | 'xl' }) {
-  const [checked, setChecked] = useState<boolean[]>(QC_CHECKLIST.map(() => false))
+  const checklist = qcChecklistFor(order)
+  const [checked, setChecked] = useState<boolean[]>(checklist.map(() => false))
   const [failOpen, setFailOpen] = useState(false)
   const allChecked = checked.every(Boolean)
 
@@ -36,7 +37,7 @@ export function QcChecklist({ order, actor, size = 'lg' }: { order: Order; actor
         <Text style={styles.title}>Quality check</Text>
       </View>
       <Text style={styles.desc}>Centang semua poin sebelum order bisa ditandai siap.</Text>
-      {QC_CHECKLIST.map((label, i) => (
+      {checklist.map((label, i) => (
         <Pressable
           key={label}
           onPress={() => setChecked(checked.map((c, idx) => (idx === i ? !c : c)))}

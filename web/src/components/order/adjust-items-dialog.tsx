@@ -26,6 +26,8 @@ export function AdjustItemsDialog({ order, onClose }: { order: Order; onClose: (
   const [lines, setLines] = useState<Line[]>(() => order.items.map((i) => ({ key: i.id, itemId: i.id, serviceId: i.serviceId, qtyText: String(i.qty).replace('.', ',') })))
   const [addId, setAddId] = useState('')
   const [reason, setReason] = useState('')
+  const [pieceText, setPieceText] = useState(order.pieceCount ? String(order.pieceCount) : '')
+  const pieceCount = /^\d+$/.test(pieceText.trim()) && Number(pieceText) > 0 ? Number(pieceText) : null
 
   const priceOf = (l: Line) => {
     const existing = order.items.find((i) => i.id === l.itemId)
@@ -48,12 +50,13 @@ export function AdjustItemsDialog({ order, onClose }: { order: Order; onClose: (
     !hasMain && 'Minimal satu layanan utama.',
     totals.total < paid && `Total baru di bawah yang sudah dibayar (${formatRupiah(paid)}).`,
     !reason.trim() && 'Alasan koreksi wajib diisi.',
+    pieceText.trim() !== '' && pieceCount === null && 'Jumlah potong harus bilangan bulat.',
   ].filter(Boolean) as string[]
 
   const save = () => {
     if (blockers.length) return
     const r = act(
-      (s) => adjustOrderItems(s, order.id, { lines: parsed.map((p) => ({ itemId: p.line.itemId, serviceId: p.line.serviceId, qty: p.qty! })), reason }, s.tenantActor, new Date()),
+      (s) => adjustOrderItems(s, order.id, { lines: parsed.map((p) => ({ itemId: p.line.itemId, serviceId: p.line.serviceId, qty: p.qty! })), pieceCount, reason }, s.tenantActor, new Date()),
       'Item order dikoreksi',
     )
     if (r.ok) onClose()
@@ -147,6 +150,10 @@ export function AdjustItemsDialog({ order, onClose }: { order: Order; onClose: (
             </div>
           ))}
         </dl>
+
+        <Field label="Jumlah potong" htmlFor="adj-pieces" hint="Kosongkan bila tidak dihitung.">
+          <Input id="adj-pieces" inputMode="numeric" value={pieceText} onChange={(e) => setPieceText(e.target.value)} placeholder="15" className="tabular max-w-32" />
+        </Field>
 
         <Field label="Alasan koreksi" htmlFor="adj-reason" required hint="Tercatat di riwayat order dan audit log.">
           <Textarea id="adj-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Contoh: timbang ulang di outlet" />

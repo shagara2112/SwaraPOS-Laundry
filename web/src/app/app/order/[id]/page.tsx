@@ -142,10 +142,18 @@ export default function OrderDetailPage() {
             </CardBody>
           </Card>
 
-          {(order.conditionNotes.length > 0 || customer.notes) && (
+          {(order.conditionNotes.length > 0 || !!customer.notes || !!order.pieceCount || !!order.conditionPhotos?.length) && (
             <Card>
-              <CardHeader title="Catatan kondisi & preferensi" />
+              <CardHeader title="Kondisi & preferensi" />
               <CardBody className="space-y-3 pt-3">
+                {!!order.pieceCount && (
+                  <p className="text-sm text-fg">
+                    Jumlah potong: <strong className="tabular">{order.pieceCount} pcs</strong>
+                  </p>
+                )}
+                {order.conditionPhotos?.length ? (
+                  <p className="text-sm text-fg-muted">{order.conditionPhotos.length} foto kondisi tersimpan di HP kasir; tampil di web setelah server aktif.</p>
+                ) : null}
                 {order.conditionNotes.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {order.conditionNotes.map((n) => (

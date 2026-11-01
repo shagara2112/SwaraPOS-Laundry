@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { Actor, Order, OrderStatus } from '../types'
 import {
+  addConditionPhotos,
   adjustOrderItems,
   canAdjustItems,
   createOrder,
@@ -362,5 +363,31 @@ describe('refund', () => {
     const over = ok(recordPayment(created.state, created.value.id, { method: 'QRIS', amount: created.value.totals.total + 5000 }, actor, now))
     const { value } = ok(recordRefund(over.state, created.value.id, { method: 'QRIS', amount: 5000, reason: 'Kelebihan transfer' }, actor, now))
     expect(value.paymentStatus).toBe('PAID')
+  })
+})
+
+describe('jumlah potong dan foto kondisi', () => {
+  it('createOrder menyimpan jumlah potong dan foto kondisi beserta petugasnya', () => {
+    const { value } = ok(createOrder(s0, { ...walkIn, pieceCount: 15, conditionPhotos: ['file:///a.jpg', 'file:///b.jpg'] }, actor, now))
+    expect(value.pieceCount).toBe(15)
+    expect(value.conditionPhotos).toEqual([
+      { uri: 'file:///a.jpg', at: now.toISOString(), actor },
+      { uri: 'file:///b.jpg', at: now.toISOString(), actor },
+    ])
+  })
+
+  it('koreksi item bisa mengubah jumlah potong dan mencatatnya', () => {
+    const created = ok(createOrder(s0, { ...walkIn, pieceCount: 12 }, actor, now))
+    const line = { itemId: created.value.items[0].id, serviceId: kilo.id, qty: 3.5 }
+    const { value } = ok(adjustOrderItems(created.state, created.value.id, { lines: [line], pieceCount: 15, reason: 'Hitung ulang' }, actor, now))
+    expect(value.pieceCount).toBe(15)
+    expect(value.history.at(-1)?.note).toContain('Jumlah potong 12 → 15 pcs')
+  })
+
+  it('foto kondisi bisa ditambah sampai 6', () => {
+    const created = ok(createOrder(s0, { ...walkIn, conditionPhotos: ['file:///1.jpg'] }, actor, now))
+    const more = ok(addConditionPhotos(created.state, created.value.id, ['file:///2.jpg', 'file:///3.jpg'], actor, now))
+    expect(more.value.conditionPhotos?.map((p) => p.uri)).toEqual(['file:///1.jpg', 'file:///2.jpg', 'file:///3.jpg'])
+    expect(addConditionPhotos(more.state, created.value.id, ['4', '5', '6', '7'], actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
   })
 })

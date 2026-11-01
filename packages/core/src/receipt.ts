@@ -17,6 +17,7 @@ export type Receipt = {
   cashier: string
   handback: string
   express: boolean
+  pieceCount?: number
   lines: { name: string; detail: string; total: number }[]
   subtotal: number
   fees: { label: string; amount: number }[]
@@ -50,6 +51,7 @@ export function buildReceipt(input: { order: Order; outlet: Outlet; customer: Cu
     cashier: order.history[0]?.actor.name ?? '-',
     handback: HANDBACK_LABEL[order.handback],
     express: order.express,
+    pieceCount: order.pieceCount,
     lines: order.items.map((i) => ({ name: i.name, detail: formatLineDetail(i.unit, i.qty, i.unitPrice), total: i.total })),
     subtotal: totals.subtotal,
     fees,
@@ -119,6 +121,7 @@ export function receiptHtml(r: Receipt, paper: ReceiptPaper): string {
   ${row('WhatsApp', r.customerPhone)}
   ${row('Kasir', r.cashier)}
   ${row('Pengembalian', r.handback)}
+  ${r.pieceCount ? row('Jumlah potong', `${r.pieceCount} pcs`) : ''}
   ${r.express ? '<div class="c"><span class="tag">EXPRESS</span></div>' : ''}
   <hr>
   ${items}

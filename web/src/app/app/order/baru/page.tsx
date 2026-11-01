@@ -12,6 +12,8 @@ import { ItemEditor } from '@/components/cashier/item-editor'
 import { OrderSummary } from '@/components/cashier/order-summary'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
+import { Field } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { emptyDraft, orderInputFromDraft, summarizeDraft, type OrderDraft } from '@swarapos/core/cashier'
 import { formatRupiah } from '@swarapos/core/format'
@@ -185,6 +187,9 @@ export default function KasirPage() {
 
           <Section step={4} title="Kondisi awal">
             <ConditionNotes value={draft.conditions} onChange={(conditions) => update({ conditions })} />
+            <Field label="Jumlah potong (opsional)" htmlFor="piece-count" className="mt-4 max-w-56" hint="Dicocokkan saat QC; tercetak di label dan nota.">
+              <Input id="piece-count" inputMode="numeric" value={draft.pieceCountText ?? ''} onChange={(e) => update({ pieceCountText: e.target.value })} placeholder="15" className="tabular" />
+            </Field>
           </Section>
 
           <Section step={5} title="Diskon (opsional)">

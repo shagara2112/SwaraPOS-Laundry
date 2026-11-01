@@ -22,6 +22,7 @@ export function OrderLabel({ order, outlet, customer }: { order: Order; outlet: 
         <div className="mt-2 space-y-0.5 border-t border-dashed border-black/40 pt-2 text-[10px]">
           <p>Masuk: {formatDateTime(order.createdAt)}</p>
           <p className="font-semibold">Estimasi: {formatDateTime(order.dueAt)}</p>
+          {!!order.pieceCount && <p className="font-semibold">Jumlah: {order.pieceCount} pcs</p>}
           {order.items.map((i) => (
             <p key={i.id}>
               {i.name} — {formatQty(i.unit, i.qty)}

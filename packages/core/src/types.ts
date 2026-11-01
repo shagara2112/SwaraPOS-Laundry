@@ -139,6 +139,8 @@ export interface OrderPayment {
   note?: string
 }
 
+export type ConditionPhoto = { uri: string; at: string; actor: Actor }
+
 /** Diskon order: nominal rupiah atau persen dari subtotal + express, dengan alasan. */
 export type Discount = { type: 'AMOUNT' | 'PERCENT'; value: number; reason: string }
 
@@ -164,6 +166,10 @@ export interface Order {
   items: OrderItem[]
   totals: OrderTotals
   discount?: Discount
+  /** Jumlah potong pakaian saat diterima (dasar menangani klaim item kurang). */
+  pieceCount?: number
+  /** Foto kondisi awal; prototipe menyimpan URI file di perangkat yang memotret. */
+  conditionPhotos?: ConditionPhoto[]
   conditionNotes: string[]
   qcPassed: boolean
   paymentStatus: PaymentStatus
