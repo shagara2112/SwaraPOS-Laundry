@@ -4,12 +4,13 @@ import { router } from 'expo-router'
 import { cashSummary } from '@swarapos/core/cash'
 import { presetRange } from '@swarapos/core/date-range'
 import { formatRupiah } from '@swarapos/core/format'
+import { tenantSlug } from '@swarapos/core/pickup-request'
 import { setReceiptPaper } from '@swarapos/core/store/actions-catalog'
 import type { ReceiptPaper } from '@swarapos/core/types'
-import { Banknote, ExternalLink, LogOut, Receipt, RotateCcw, Store, UserRound } from 'lucide-react-native'
+import { Banknote, ExternalLink, Link2, LogOut, Receipt, RotateCcw, Share2, Store, UserRound } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
-import { Linking, StyleSheet, Text, View } from 'react-native'
-import { WEB_DASHBOARD_URL } from '@/lib/config'
+import { Linking, Share, StyleSheet, Text, View } from 'react-native'
+import { WEB_DASHBOARD_URL, WEB_ORIGIN } from '@/lib/config'
 import { useDemo } from '@/store/demo-store'
 import { useNow } from '@/lib/use-now'
 import { act } from '@/store/act'
@@ -30,6 +31,9 @@ export function AccountScreen() {
   const staff = useCurrentStaff()
   const actor = useActor()
   const orders = useDemo((s) => s.orders)
+  const slug = useDemo((s) => tenantSlug(s))
+  const tenantName = useDemo((s) => s.tenant.name)
+  const pickupLink = `${WEB_ORIGIN}/pesan/${slug}?outlet=${outlet.code}`
   const now = useNow()
   // Pembayaran yang dicatat kasir ini hari ini (WIB), untuk dicocokkan dengan laci saat tutup kasir.
   const myCash = useMemo(
@@ -69,6 +73,25 @@ export function AccountScreen() {
           {myCash.byMethod.map((m) => (
             <Row key={m.method} label={m.label} value={formatRupiah(m.total)} />
           ))}
+        </Card>
+      )}
+
+      {role === 'OWNER' && (
+        <Card style={styles.web}>
+          <View style={styles.paperHead}>
+            <Link2 size={18} color={color.primary} />
+            <Text style={styles.outletName}>Link pesan jemput</Text>
+          </View>
+          <Text style={styles.link} selectable>
+            {pickupLink}
+          </Text>
+          <Text style={styles.meta}>Bagikan di WhatsApp atau Instagram; permintaan masuk ke Antar-jemput.</Text>
+          <Button
+            title="Bagikan link"
+            icon={Share2}
+            variant="secondary"
+            onPress={() => Share.share({ message: `Pesan jemput cucian di ${tenantName}: ${pickupLink}` }).catch(() => toast('Link tidak bisa dibagikan dari perangkat ini.', 'error'))}
+          />
         </Card>
       )}
 
@@ -151,6 +174,7 @@ const styles = StyleSheet.create({
   outlet: { flexDirection: 'row', alignItems: 'flex-start', gap: space(3), marginTop: space(3) },
   web: { gap: space(2), marginTop: space(3) },
   paperHead: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
+  link: { fontFamily: font.mono, fontSize: 12, color: color.muted, backgroundColor: color.surface2, borderRadius: radius.sm, padding: space(2) },
   outletName: { fontFamily: font.semibold, fontSize: 15, color: color.fg },
   actions: { marginTop: space(6), gap: space(2) },
   version: { marginTop: space(8), textAlign: 'center', fontFamily: font.regular, fontSize: 12, color: color.subtle },

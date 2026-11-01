@@ -43,6 +43,10 @@ export type NewOrderInput = {
   pieceCount?: number
   /** URI foto kondisi awal di perangkat kasir. */
   conditionPhotos?: string[]
+  /** Permintaan dari link pelanggan: jadwal jemput, alamat jemput, dan catatan riwayat. */
+  scheduledAt?: string
+  pickupAddress?: string
+  note?: string
 }
 
 const EXCEPTION_STATUSES: OrderStatus[] = ['ON_HOLD', 'ISSUE_REPORTED', 'CANCELLED']
@@ -92,7 +96,8 @@ export function createOrder(
   const outlet = s.outlets.find((o) => o.id === input.outletId)
   const customer = s.customers.find((c) => c.id === input.customerId)
   if (!outlet || !customer) return fail('NOT_FOUND')
-  if (input.items.length === 0) return fail('NOT_ALLOWED')
+  // Permintaan jemput dari link belum punya item; ditimbang dan diisi di outlet.
+  if (input.items.length === 0 && input.channel !== 'LANDING') return fail('NOT_ALLOWED')
 
   const services = input.items.map((item) => s.services.find((svc) => svc.id === item.serviceId))
   if (services.some((svc) => !svc || !svc.active)) return fail('NOT_ALLOWED')
@@ -142,12 +147,12 @@ export function createOrder(
     qcPassed: false,
     paymentStatus: 'UNPAID',
     payments: [],
-    history: [{ id: newId('evt'), from: null, to: status, actor, at, note: 'Order dibuat di kasir' }],
+    history: [{ id: newId('evt'), from: null, to: status, actor, at, note: input.note ?? 'Order dibuat di kasir' }],
     whatsapp: event ? [{ id: newId('wa'), event, state: 'NOT_SENT' }] : [],
-    dueAt: estimateDueAt(
-      now,
-      services.map((svc) => svc!.durationHours),
-      input.express,
+    // Tanpa item (permintaan dari link): estimasi awal 2 hari setelah jadwal jemput, diperbarui saat item diisi.
+    dueAt: (services.length
+      ? estimateDueAt(now, services.map((svc) => svc!.durationHours), input.express)
+      : new Date(new Date(input.scheduledAt ?? at).getTime() + 48 * 60 * 60 * 1000)
     ).toISOString(),
     createdAt: at,
     version: 1,
@@ -162,8 +167,8 @@ export function createOrder(
             orderId: order.id,
             type: 'PICKUP',
             status: 'UNASSIGNED',
-            scheduledAt: at,
-            address: customer.address ?? '-',
+            scheduledAt: input.scheduledAt ?? at,
+            address: input.pickupAddress ?? customer.address ?? '-',
             distanceKm: input.distanceKm ?? customerDistance(s, order),
             fee: input.pickupFee,
           },

@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, MapPin, Phone, Receipt, Save, UserPlus } from 'lucide-react'
+import { Clock, Copy, ExternalLink, Link2, MapPin, Phone, Receipt, Save, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { PageHeader } from '@/components/layout/page-header'
 import { PaymentMethodsTab } from '@/components/settings/payment-methods-tab'
@@ -17,6 +17,7 @@ import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/cn'
 import { buildWaMessage, WA_EVENT_LABEL } from '@swarapos/core/domain/whatsapp'
 import { ROLE_LABEL } from '@swarapos/core/labels'
+import { tenantSlug } from '@swarapos/core/pickup-request'
 import { planUsage } from '@swarapos/core/selectors'
 import { act } from '@/lib/store/act'
 import { setReceiptPaper, updateZones } from '@swarapos/core/store/actions-catalog'
@@ -25,6 +26,9 @@ import type { DeliveryZone, StaffRole, WaEvent } from '@swarapos/core/types'
 
 function OutletTab() {
   const outlets = useDemo((s) => s.outlets)
+  const slug = useDemo((s) => tenantSlug(s))
+  // window hanya ada di browser; saat render server link sementara relatif.
+  const pickupLink = (code: string) => `${typeof window === 'undefined' ? '' : window.location.origin}/pesan/${slug}?outlet=${code}`
   const plan = useDemo((s) => s.platform.tenants.find((t) => t.id === s.tenant.id)?.plan)
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -47,6 +51,33 @@ function OutletTab() {
             <p className="font-mono text-xs text-fg-subtle">
               Titik: {o.lat}, {o.lng}
             </p>
+            <div className="space-y-2 border-t border-border pt-3">
+              <span className="flex items-center gap-2 text-fg">
+                <Link2 className="size-4 shrink-0" aria-hidden />
+                Link pesan jemput
+              </span>
+              <p className="break-all rounded-lg bg-surface-2 px-2.5 py-1.5 font-mono text-xs text-fg-muted">{pickupLink(o.code)}</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    navigator.clipboard
+                      .writeText(pickupLink(o.code))
+                      .then(() => toast('Link disalin'))
+                      .catch(() => toast('Salin manual dari kotak di atas.', 'error'))
+                  }
+                >
+                  <Copy aria-hidden />
+                  Salin
+                </Button>
+                <a href={pickupLink(o.code)} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-primary hover:bg-primary-soft">
+                  <ExternalLink className="size-4" aria-hidden />
+                  Buka
+                </a>
+              </div>
+              <p className="text-xs text-fg-subtle">Bagikan di WhatsApp atau Instagram; permintaan masuk ke Antar-jemput.</p>
+            </div>
             <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
               <span className="flex items-center gap-2 text-fg">
                 <Receipt className="size-4 shrink-0" aria-hidden />

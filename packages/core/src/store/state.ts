@@ -73,6 +73,7 @@ export type ActionError =
   | 'IN_USE'
   | 'UNPAID'
   | 'OVERPAID'
+  | 'TOO_MANY'
 
 export type ActionResult<T = undefined> =
   | { ok: true; state: DemoState; value: T }

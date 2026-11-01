@@ -13,6 +13,7 @@ export const ERROR_MESSAGE: Record<ActionError, string> = {
   IN_USE: 'Pelanggan ini sudah punya order, jadi tidak bisa dihapus.',
   UNPAID: 'Order belum lunas. Catat pembayaran atau serahkan sebagai piutang dengan alasan.',
   OVERPAID: 'Total baru lebih kecil dari yang sudah dibayar.',
+  TOO_MANY: 'Terlalu banyak permintaan aktif untuk nomor ini.',
 }
 
 /** Jalankan reducer lewat store, lalu tampilkan toast sukses atau pesan error. */
