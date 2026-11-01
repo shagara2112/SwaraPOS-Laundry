@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import type { Actor, Order, OrderStatus } from '../types'
 import {
+  adjustOrderItems,
+  canAdjustItems,
   createOrder,
   markWhatsApp,
   recordPayment,
@@ -190,5 +192,103 @@ describe('idempotensi createOrder (review final)', () => {
     const again = ok(createOrder(first.state, { ...walkIn, idempotencyKey: 'draft-1' }, actor, now))
     expect(again.value.id).toBe(first.value.id)
     expect(again.state.orders.length).toBe(first.state.orders.length)
+  })
+})
+
+describe('adjustOrderItems (koreksi berat/item)', () => {
+  const parfum = s0.services.find((x) => x.id === 's-parfum')!
+  const setup = () => {
+    const created = ok(createOrder(s0, { ...walkIn, express: true, items: [{ serviceId: kilo.id, qty: 3.5 }, { serviceId: parfum.id, qty: 1 }] }, actor, now))
+    return { state: created.state, order: created.value }
+  }
+
+  it('mengubah berat dengan harga terkunci, menghitung ulang total, dan mencatat riwayat + audit', () => {
+    const { state, order } = setup()
+    const [kiloItem, parfumItem] = order.items
+    const { value, state: next } = ok(
+      adjustOrderItems(state, order.id, { lines: [{ itemId: kiloItem.id, serviceId: kilo.id, qty: 4.2 }, { itemId: parfumItem.id, serviceId: parfum.id, qty: 1 }], reason: 'Timbang ulang di outlet' }, actor, now),
+    )
+    expect(value.items[0]).toMatchObject({ id: kiloItem.id, qty: 4.2, unitPrice: kiloItem.unitPrice, total: Math.round(kiloItem.unitPrice * 4.2) })
+    const subtotal = Math.round(kiloItem.unitPrice * 4.2) + parfumItem.total
+    expect(value.totals.subtotal).toBe(subtotal)
+    expect(value.totals.expressFee).toBe(Math.round((subtotal * s0.tenant.expressSurchargePct) / 100))
+    expect(value.totals.total).toBe(subtotal + value.totals.expressFee)
+    const last = value.history.at(-1)!
+    expect(last).toMatchObject({ from: order.status, to: order.status, label: 'Koreksi item' })
+    expect(last.note).toContain('3,5 kg → 4,2 kg')
+    expect(last.note).toContain('Timbang ulang di outlet')
+    expect(next.platform.audit.at(-1)).toMatchObject({ action: 'order.items_adjusted', entityId: order.id })
+  })
+
+  it('baris bisa dihapus dan layanan baru memakai harga outlet saat ini', () => {
+    const { state, order } = setup()
+    const kemeja = s0.services.find((x) => x.id === 's-kemeja')!
+    const { value } = ok(adjustOrderItems(state, order.id, { lines: [{ itemId: order.items[0].id, serviceId: kilo.id, qty: 3.5 }, { serviceId: kemeja.id, qty: 2 }], reason: 'Tambah kemeja' }, actor, now))
+    expect(value.items.map((i) => i.serviceId)).toEqual([kilo.id, kemeja.id])
+    expect(value.items[1]).toMatchObject({ qty: 2, unitPrice: kemeja.prices['o-kmg'] })
+    expect(value.history.at(-1)?.note).toContain('Hapus Parfum Premium')
+    expect(value.history.at(-1)?.note).toContain('Tambah Kemeja / Blus')
+  })
+
+  it('alasan wajib, minimal satu layanan utama, dan jumlah harus lebih dari 0', () => {
+    const { state, order } = setup()
+    const line = { itemId: order.items[0].id, serviceId: kilo.id, qty: 4 }
+    expect(adjustOrderItems(state, order.id, { lines: [line], reason: ' ' }, actor, now)).toEqual({ ok: false, error: 'REASON_REQUIRED' })
+    expect(adjustOrderItems(state, order.id, { lines: [{ serviceId: parfum.id, qty: 1 }], reason: 'x' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+    expect(adjustOrderItems(state, order.id, { lines: [{ ...line, qty: 0 }], reason: 'x' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+  })
+
+  it('koreksi dibuka sampai QC, ditutup sejak siap', () => {
+    expect(canAdjustItems('WEIGHED_OR_COUNTED')).toBe(true)
+    expect(canAdjustItems('QUALITY_CHECK')).toBe(true)
+    expect(canAdjustItems('READY_FOR_PICKUP')).toBe(false)
+    expect(canAdjustItems('COMPLETED')).toBe(false)
+  })
+
+  it('order yang sudah siap atau selesai tidak bisa dikoreksi', () => {
+    const ready = s0.orders.find((o) => o.status === 'READY_FOR_PICKUP')!
+    const line = { itemId: ready.items[0].id, serviceId: ready.items[0].serviceId, qty: 9 }
+    expect(adjustOrderItems(s0, ready.id, { lines: [line], reason: 'x' }, actor, now)).toEqual({ ok: false, error: 'NOT_ALLOWED' })
+  })
+
+  it('total baru tidak boleh di bawah yang sudah dibayar', () => {
+    const { state, order } = setup()
+    const paid = ok(recordPayment(state, order.id, { method: 'CASH', amount: order.totals.total }, actor, now))
+    const line = { itemId: order.items[0].id, serviceId: kilo.id, qty: 1 }
+    expect(adjustOrderItems(paid.state, order.id, { lines: [line], reason: 'x' }, actor, now)).toEqual({ ok: false, error: 'OVERPAID' })
+  })
+
+  it('status bayar mengikuti total baru', () => {
+    const { state, order } = setup()
+    const paid = ok(recordPayment(state, order.id, { method: 'CASH', amount: order.totals.total }, actor, now))
+    expect(paid.value.paymentStatus).toBe('PAID')
+    const line = { itemId: order.items[0].id, serviceId: kilo.id, qty: 6 }
+    const { value } = ok(adjustOrderItems(paid.state, order.id, { lines: [line, { itemId: order.items[1].id, serviceId: parfum.id, qty: 1 }], reason: 'Timbang ulang' }, actor, now))
+    expect(value.paymentStatus).toBe('PARTIAL')
+  })
+})
+
+describe('serah-terima dengan sisa tagihan (piutang)', () => {
+  const readyUnpaid = () => {
+    const o = s0.orders.find((x) => x.status === 'READY_FOR_PICKUP' && x.handback === 'SELF_PICKUP' && x.paymentStatus !== 'PAID')!
+    return o
+  }
+
+  it('order belum lunas tidak bisa diambil tanpa alasan piutang', () => {
+    expect(transitionOrder(s0, readyUnpaid().id, 'COMPLETED', {}, actor, now)).toEqual({ ok: false, error: 'UNPAID' })
+  })
+
+  it('dengan alasan, order selesai dan piutang tercatat di riwayat serta audit', () => {
+    const o = readyUnpaid()
+    const { value, state } = ok(transitionOrder(s0, o.id, 'COMPLETED', { reason: 'Pelanggan langganan, bayar akhir bulan' }, actor, now))
+    expect(value.status).toBe('COMPLETED')
+    expect(value.history.at(-1)?.note).toMatch(/^Piutang Rp[\d.]+: Pelanggan langganan, bayar akhir bulan$/)
+    expect(state.platform.audit.at(-1)).toMatchObject({ action: 'order.credit', entityId: o.id })
+  })
+
+  it('order lunas diambil tanpa alasan', () => {
+    const o = readyUnpaid()
+    const paid = ok(recordPayment(s0, o.id, { method: 'CASH', amount: o.totals.total - o.payments.reduce((x, p) => x + p.amount, 0) }, actor, now))
+    expect(ok(transitionOrder(paid.state, o.id, 'COMPLETED', {}, actor, now)).value.status).toBe('COMPLETED')
   })
 })

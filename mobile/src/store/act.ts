@@ -11,6 +11,8 @@ export const ERROR_MESSAGE: Record<ActionError, string> = {
   TOO_LARGE: 'Ukuran file terlalu besar.',
   DUPLICATE: 'Nomor WhatsApp ini sudah dipakai pelanggan lain.',
   IN_USE: 'Pelanggan ini sudah punya order, jadi tidak bisa dihapus.',
+  UNPAID: 'Order belum lunas. Catat pembayaran atau serahkan sebagai piutang dengan alasan.',
+  OVERPAID: 'Total baru lebih kecil dari yang sudah dibayar.',
 }
 
 /** Jalankan reducer core lewat store, lalu tampilkan toast sukses atau pesan error. */

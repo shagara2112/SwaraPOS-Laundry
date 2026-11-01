@@ -1,13 +1,18 @@
 'use client'
 
-import { Ban, CirclePause, TriangleAlert, Truck, type LucideIcon } from 'lucide-react'
+import { Ban, CirclePause, HandCoins, PackageCheck, TriangleAlert, Truck, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Button, ButtonLink } from '@/components/ui/button'
+import { Dialog } from '@/components/ui/dialog'
+import { Field } from '@/components/ui/field'
+import { Textarea } from '@/components/ui/textarea'
+import { formatRupiah } from '@swarapos/core/format'
 import { nextStatuses, requiresReason, STATUS_LABEL } from '@swarapos/core/domain/order-status'
-import { resumeTarget } from '@swarapos/core/selectors'
+import { amountDue, resumeTarget } from '@swarapos/core/selectors'
 import { act } from '@/lib/store/act'
 import { transitionOrder } from '@swarapos/core/store/actions-order'
 import type { Order, OrderStatus } from '@swarapos/core/types'
+import { RecordPaymentDialog } from './payment-panel'
 import { ReasonDialog } from './reason-dialog'
 
 const EXCEPTION_META: Partial<Record<OrderStatus, { label: string; title: string; icon: LucideIcon; placeholder: string }>> = {
@@ -27,6 +32,7 @@ function forwardLabel(order: Order, to: OrderStatus): string {
 /** Tombol transisi sesuai mesin status. Di tahap QC, keputusan diambil lewat panel QC. */
 export function StatusActions({ order }: { order: Order }) {
   const [reasonFor, setReasonFor] = useState<OrderStatus | null>(null)
+  const [handover, setHandover] = useState(false)
   const next = nextStatuses(order.status, resumeTarget(order))
   let forward = next.filter((s) => !requiresReason(s))
   // Jemput dan serah-terima wajib lewat tugas kurir (dengan bukti), bukan tombol di sini.
@@ -44,7 +50,8 @@ export function StatusActions({ order }: { order: Order }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {forward.map((to, i) => (
-        <Button key={to} variant={i === 0 ? 'primary' : 'secondary'} onClick={() => go(to)}>
+        // Cucian belum lunas: cek tagihan dulu sebelum diserahkan.
+        <Button key={to} variant={i === 0 ? 'primary' : 'secondary'} onClick={() => (to === 'COMPLETED' && amountDue(order) > 0 ? setHandover(true) : go(to))}>
           {forwardLabel(order, to)}
         </Button>
       ))}
@@ -63,6 +70,7 @@ export function StatusActions({ order }: { order: Order }) {
           </Button>
         )
       })}
+      {handover && <HandoverDialog order={order} onClose={() => setHandover(false)} onComplete={(reason) => go('COMPLETED', reason).ok && setHandover(false)} />}
       <ReasonDialog
         open={!!meta}
         title={meta?.title ?? ''}
@@ -75,5 +83,64 @@ export function StatusActions({ order }: { order: Order }) {
         }}
       />
     </div>
+  )
+}
+
+/** Serah-terima cucian yang belum lunas: catat bayar dulu, atau serahkan sebagai piutang dengan alasan. */
+function HandoverDialog({ order, onClose, onComplete }: { order: Order; onClose: () => void; onComplete: (reason?: string) => void }) {
+  const [paying, setPaying] = useState(false)
+  const [credit, setCredit] = useState(false)
+  const [reason, setReason] = useState('')
+  const due = amountDue(order)
+  return (
+    <>
+      <Dialog
+        open={!paying}
+        onClose={onClose}
+        size="sm"
+        title={due > 0 ? 'Masih ada sisa tagihan' : 'Tagihan sudah lunas'}
+        description={`${order.orderNo} · cek pembayaran sebelum cucian diserahkan.`}
+        footer={
+          due > 0 ? (
+            credit ? (
+              <>
+                <Button variant="secondary" onClick={() => setCredit(false)}>
+                  Kembali
+                </Button>
+                <Button disabled={!reason.trim()} onClick={() => onComplete(reason)}>
+                  Serahkan sebagai piutang
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => setCredit(true)}>
+                  Serahkan sebagai piutang
+                </Button>
+                <Button onClick={() => setPaying(true)}>
+                  <HandCoins aria-hidden />
+                  Catat bayar dulu
+                </Button>
+              </>
+            )
+          ) : (
+            <Button onClick={() => onComplete()}>
+              <PackageCheck aria-hidden />
+              Serahkan ke pelanggan
+            </Button>
+          )
+        }
+      >
+        <div className="rounded-xl bg-surface-2 p-4 text-center">
+          <p className="text-xs text-fg-subtle">Sisa tagihan</p>
+          <p className={`tabular mt-1 text-2xl font-bold ${due > 0 ? 'text-danger' : 'text-fg'}`}>{formatRupiah(due)}</p>
+        </div>
+        {credit && (
+          <Field label="Alasan piutang" htmlFor="credit-reason" required hint="Tercatat di riwayat order dan audit log." className="mt-4">
+            <Textarea id="credit-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Contoh: pelanggan langganan, bayar akhir bulan" />
+          </Field>
+        )}
+      </Dialog>
+      {paying && <RecordPaymentDialog order={order} open onClose={() => setPaying(false)} />}
+    </>
   )
 }

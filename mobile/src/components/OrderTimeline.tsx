@@ -22,7 +22,7 @@ export function OrderTimeline({ history }: { history: StatusEvent[] }) {
               <Icon size={16} color={t.fg} />
             </View>
             <View style={styles.body}>
-              <Text style={styles.title}>{isNote ? 'Catatan QC' : STATUS_LABEL[e.to]}</Text>
+              <Text style={styles.title}>{isNote ? (e.label ?? 'Catatan QC') : STATUS_LABEL[e.to]}</Text>
               <Text style={styles.meta}>
                 {formatDateTime(e.at)} · {e.actor.name}
               </Text>

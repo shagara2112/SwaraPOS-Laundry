@@ -35,7 +35,7 @@ export function OrderTimeline({ history, showActor = true }: { history: StatusEv
               <Icon className="size-4" aria-hidden />
             </span>
             <div className="min-w-0 pt-1.5">
-              <p className="text-sm font-semibold text-fg">{isNote ? 'Catatan QC' : STATUS_LABEL[e.to]}</p>
+              <p className="text-sm font-semibold text-fg">{isNote ? (e.label ?? 'Catatan QC') : STATUS_LABEL[e.to]}</p>
               <p className="mt-0.5 text-xs text-fg-subtle">
                 {formatDateTime(e.at)}
                 {showActor && ` · ${e.actor.name}`}

@@ -141,7 +141,7 @@ export function CourierTaskScreen() {
         </>
       )}
 
-      {proofOpen && <ProofSheet taskType={task.type} onClose={() => setProofOpen(false)} onConfirm={(proof) => act((s) => updateDeliveryTask(s, task.id, 'DONE', { proof }, actor, new Date()), 'Serah-terima tercatat').ok} />}
+      {proofOpen && <ProofSheet taskType={task.type} due={task.type === 'DELIVERY' ? due : 0} onClose={() => setProofOpen(false)} onConfirm={(proof) => act((s) => updateDeliveryTask(s, task.id, 'DONE', { proof }, actor, new Date()), 'Serah-terima tercatat').ok} />}
       <ReasonSheet
         visible={failOpen}
         title={task.type === 'PICKUP' ? 'Jemput gagal' : 'Antar gagal'}
@@ -159,7 +159,7 @@ export function CourierTaskScreen() {
 }
 
 /** Bukti serah-terima: nama penerima wajib, plus foto atau tanda tangan. */
-function ProofSheet({ taskType, onClose, onConfirm }: { taskType: 'PICKUP' | 'DELIVERY'; onClose: () => void; onConfirm: (proof: { receiverName: string; method: 'PHOTO' | 'SIGNATURE' }) => boolean }) {
+function ProofSheet({ taskType, due, onClose, onConfirm }: { taskType: 'PICKUP' | 'DELIVERY'; due: number; onClose: () => void; onConfirm: (proof: { receiverName: string; method: 'PHOTO' | 'SIGNATURE' }) => boolean }) {
   const [receiver, setReceiver] = useState('')
   const [photo, setPhoto] = useState<string | null>(null)
   const [signed, setSigned] = useState(false)
@@ -185,6 +185,7 @@ function ProofSheet({ taskType, onClose, onConfirm }: { taskType: 'PICKUP' | 'DE
         </>
       }
     >
+      {due > 0 && <Text style={styles.warn}>Sisa tagihan {formatRupiah(due)}. Bila pelanggan membayar, catat COD dulu sebelum menyimpan bukti.</Text>}
       <TextField label={taskType === 'PICKUP' ? 'Diserahkan oleh' : 'Diterima oleh'} required value={receiver} onChangeText={setReceiver} placeholder="Nama orang yang menyerahkan/menerima" autoCapitalize="words" />
       <View style={{ gap: space(2) }}>
         <Text style={styles.label}>Foto</Text>

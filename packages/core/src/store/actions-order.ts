@@ -4,7 +4,9 @@ import { canTransition } from '../domain/order-status'
 import { calculateTotals, estimateDueAt, lineTotal } from '../domain/pricing'
 import { createTrackingToken } from '../domain/tracking'
 import { waEventForStatus } from '../domain/whatsapp'
+import { formatRupiah } from '../format'
 import { newId } from '../ids'
+import { formatQty } from '../labels'
 import type {
   Actor,
   DeliveryTask,
@@ -12,6 +14,7 @@ import type {
   IntakeType,
   Order,
   OrderChannel,
+  OrderItem,
   OrderPaymentMethod,
   OrderStatus,
   StatusEvent,
@@ -182,8 +185,13 @@ export function transitionOrder(
   })
   if (!check.ok) return fail(check.reason)
 
+  // Cucian belum lunas hanya boleh diserahkan sebagai piutang dengan alasan.
+  const due = order.totals.total - order.payments.reduce((sum, p) => sum + p.amount, 0)
+  const credit = to === 'COMPLETED' && due > 0
+  if (credit && !opts.reason?.trim()) return fail('UNPAID')
+
   const at = now.toISOString()
-  const note = opts.reason?.trim() || opts.note?.trim() || undefined
+  const note = credit ? `Piutang ${formatRupiah(due)}: ${opts.reason!.trim()}` : opts.reason?.trim() || opts.note?.trim() || undefined
   const event = waEventForStatus(to)
   const whatsapp: WaLog[] =
     event && !order.whatsapp.some((l) => l.event === event)
@@ -234,6 +242,10 @@ export function transitionOrder(
     }
   }
 
+  if (credit) {
+    state = appendAudit(state, { at, actor, action: 'order.credit', tenantId: s.tenant.id, entity: 'order', entityId: order.id, detail: `${order.orderNo}: ${note}` })
+  }
+
   if (EXCEPTION_STATUSES.includes(to)) {
     state = appendAudit(state, {
       at,
@@ -246,6 +258,77 @@ export function transitionOrder(
     })
   }
 
+  return { ok: true, state, value: updated }
+}
+
+// Setelah siap/diserahkan, rincian order tidak boleh berubah lagi.
+const LOCKED_FOR_ADJUST: OrderStatus[] = ['READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED', 'CANCELLED']
+
+export function canAdjustItems(status: OrderStatus): boolean {
+  return !LOCKED_FOR_ADJUST.includes(status)
+}
+
+/**
+ * Koreksi berat/jumlah item (mis. timbang ulang di outlet). Baris lama tetap memakai harga terkunci;
+ * layanan baru memakai harga outlet saat ini. Total tidak boleh turun di bawah yang sudah dibayar.
+ */
+export function adjustOrderItems(
+  s: DemoState,
+  orderId: string,
+  input: { lines: { itemId?: string; serviceId: string; qty: number }[]; reason: string },
+  actor: Actor,
+  now: Date,
+): ActionResult<Order> {
+  const order = s.orders.find((o) => o.id === orderId)
+  if (!order) return fail('NOT_FOUND')
+  if (!canAdjustItems(order.status)) return fail('NOT_ALLOWED')
+  const reason = input.reason.trim()
+  if (!reason) return fail('REASON_REQUIRED')
+  if (input.lines.some((l) => !(l.qty > 0))) return fail('NOT_ALLOWED')
+
+  const items: OrderItem[] = []
+  for (const line of input.lines) {
+    const existing = line.itemId ? order.items.find((i) => i.id === line.itemId) : undefined
+    if (existing) {
+      items.push({ ...existing, qty: line.qty, total: lineTotal({ unit: existing.unit, unitPrice: existing.unitPrice, qty: line.qty }) })
+      continue
+    }
+    const svc = s.services.find((x) => x.id === line.serviceId)
+    if (!svc || !svc.active) return fail('NOT_ALLOWED')
+    const unitPrice = svc.prices[order.outletId] ?? 0
+    items.push({ id: newId('itm'), serviceId: svc.id, name: svc.name, unit: svc.unit, qty: line.qty, unitPrice, total: lineTotal({ unit: svc.unit, unitPrice, qty: line.qty }) })
+  }
+  if (!items.some((i) => i.unit !== 'ADDON')) return fail('NOT_ALLOWED')
+
+  const totals = calculateTotals({
+    lines: items,
+    express: order.express,
+    expressSurchargePct: s.tenant.expressSurchargePct,
+    pickupFee: order.totals.pickupFee,
+    deliveryFee: order.totals.deliveryFee,
+  })
+  const paid = order.payments.reduce((sum, p) => sum + p.amount, 0)
+  if (totals.total < paid) return fail('OVERPAID')
+
+  const changes = [
+    ...order.items.flatMap((old) => {
+      const next = items.find((i) => i.id === old.id)
+      if (!next) return [`Hapus ${old.name}`]
+      return next.qty !== old.qty ? [`${old.name} ${formatQty(old.unit, old.qty)} → ${formatQty(next.unit, next.qty)}`] : []
+    }),
+    ...items.filter((i) => !order.items.some((old) => old.id === i.id)).map((i) => `Tambah ${i.name} ${formatQty(i.unit, i.qty)}`),
+  ]
+  const at = now.toISOString()
+  const note = `${changes.join('; ') || 'Tanpa perubahan jumlah'}. Total ${formatRupiah(order.totals.total)} → ${formatRupiah(totals.total)}. Alasan: ${reason}`
+  const updated: Order = {
+    ...order,
+    items,
+    totals,
+    paymentStatus: paid === 0 ? 'UNPAID' : paid >= totals.total ? 'PAID' : 'PARTIAL',
+    history: [...order.history, { id: newId('evt'), from: order.status, to: order.status, actor, at, note, label: 'Koreksi item' }],
+    version: order.version + 1,
+  }
+  const state = appendAudit(replaceOrder(s, updated), { at, actor, action: 'order.items_adjusted', tenantId: s.tenant.id, entity: 'order', entityId: order.id, detail: `${order.orderNo}: ${note}` })
   return { ok: true, state, value: updated }
 }
 

@@ -1,16 +1,19 @@
 import { nextStatuses, requiresReason, STATUS_LABEL } from '@swarapos/core/domain/order-status'
 import { can, type Role } from '@swarapos/core/permissions'
-import { resumeTarget } from '@swarapos/core/selectors'
+import { formatRupiah } from '@swarapos/core/format'
+import { amountDue, resumeTarget } from '@swarapos/core/selectors'
 import { transitionOrder } from '@swarapos/core/store/actions-order'
 import type { Actor, Order, OrderStatus } from '@swarapos/core/types'
 import { router } from 'expo-router'
-import { Ban, CirclePause, TriangleAlert, Truck, type LucideIcon } from 'lucide-react-native'
+import { Ban, CirclePause, HandCoins, PackageCheck, TriangleAlert, Truck, type LucideIcon } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { act } from '@/store/act'
 import { color, font, radius, space } from '@/theme'
 import { Button } from '@/ui/Button'
-import { ReasonSheet } from '@/ui/Sheet'
+import { ReasonSheet, Sheet } from '@/ui/Sheet'
+import { TextField } from '@/ui/TextField'
+import { PaymentSheet } from './PaymentSheet'
 
 const EXCEPTION_META: Partial<Record<OrderStatus, { label: string; title: string; icon: LucideIcon; placeholder: string }>> = {
   ON_HOLD: { label: 'Tahan', title: 'Tahan order', icon: CirclePause, placeholder: 'Contoh: menunggu konfirmasi pelanggan soal noda' },
@@ -30,6 +33,7 @@ function forwardLabel(order: Order, to: OrderStatus): string {
 /** Tombol transisi sesuai mesin status dan hak peran. Di tahap QC, keputusan lewat checklist QC. */
 export function StatusActions({ order, role, actor, size = 'lg' }: { order: Order; role: Role; actor: Actor; size?: 'lg' | 'xl' }) {
   const [reasonFor, setReasonFor] = useState<OrderStatus | null>(null)
+  const [handover, setHandover] = useState(false)
   const next = nextStatuses(order.status, resumeTarget(order))
   let forward = can(role, 'order.transition') ? next.filter((s) => !requiresReason(s)) : []
   const viaCourier = forward.filter((s) => COURIER_STATUSES.includes(s))
@@ -46,7 +50,14 @@ export function StatusActions({ order, role, actor, size = 'lg' }: { order: Orde
   return (
     <View style={styles.wrap}>
       {forward.map((to, i) => (
-        <Button key={to} title={forwardLabel(order, to)} variant={i === 0 ? 'primary' : 'secondary'} size={size} onPress={() => go(to)} />
+        <Button
+          key={to}
+          title={forwardLabel(order, to)}
+          variant={i === 0 ? 'primary' : 'secondary'}
+          size={size}
+          // Cucian belum lunas: cek tagihan dulu sebelum diserahkan.
+          onPress={() => (to === 'COMPLETED' && amountDue(order) > 0 ? setHandover(true) : go(to))}
+        />
       ))}
       {viaCourier.length > 0 &&
         (role === 'OWNER' ? (
@@ -65,6 +76,17 @@ export function StatusActions({ order, role, actor, size = 'lg' }: { order: Orde
           })}
         </View>
       )}
+      {handover && (
+        <HandoverSheet
+          order={order}
+          actor={actor}
+          canCredit={can(role, 'order.credit')}
+          onClose={() => setHandover(false)}
+          onComplete={(reason) => {
+            if (go('COMPLETED', reason).ok) setHandover(false)
+          }}
+        />
+      )}
       <ReasonSheet
         visible={!!meta}
         title={meta?.title ?? ''}
@@ -80,7 +102,45 @@ export function StatusActions({ order, role, actor, size = 'lg' }: { order: Orde
   )
 }
 
+/** Serah-terima cucian yang belum lunas: catat bayar dulu, atau serahkan sebagai piutang dengan alasan. */
+function HandoverSheet({ order, actor, canCredit, onClose, onComplete }: { order: Order; actor: Actor; canCredit: boolean; onClose: () => void; onComplete: (reason?: string) => void }) {
+  const [paying, setPaying] = useState(false)
+  const [credit, setCredit] = useState(false)
+  const [reason, setReason] = useState('')
+  const due = amountDue(order)
+  if (paying) return <PaymentSheet order={order} actor={actor} onClose={() => setPaying(false)} />
+  return (
+    <Sheet
+      visible
+      onClose={onClose}
+      title={due > 0 ? 'Masih ada sisa tagihan' : 'Tagihan sudah lunas'}
+      description={`${order.orderNo} · cek pembayaran sebelum cucian diserahkan`}
+      footer={
+        due <= 0 ? (
+          <Button title="Serahkan ke pelanggan" icon={PackageCheck} size="lg" onPress={() => onComplete()} />
+        ) : credit ? (
+          <Button title="Serahkan sebagai piutang" size="lg" disabled={!reason.trim()} onPress={() => onComplete(reason)} />
+        ) : (
+          <>
+            <Button title="Catat bayar dulu" icon={HandCoins} size="lg" onPress={() => setPaying(true)} />
+            {canCredit && <Button title="Serahkan sebagai piutang" variant="secondary" size="lg" onPress={() => setCredit(true)} />}
+          </>
+        )
+      }
+    >
+      <View style={styles.due}>
+        <Text style={styles.dueLabel}>Sisa tagihan</Text>
+        <Text style={[styles.dueValue, due > 0 && { color: color.danger }]}>{formatRupiah(due)}</Text>
+      </View>
+      {credit && <TextField label="Alasan piutang" required value={reason} onChangeText={setReason} placeholder="Contoh: pelanggan langganan, bayar akhir bulan" hint="Tercatat di riwayat order dan audit log." multiline />}
+    </Sheet>
+  )
+}
+
 const styles = StyleSheet.create({
+  due: { alignItems: 'center', gap: space(1), padding: space(4), borderRadius: radius.md, backgroundColor: color.surface2 },
+  dueLabel: { fontFamily: font.regular, fontSize: 13, color: color.subtle },
+  dueValue: { fontFamily: font.extrabold, fontSize: 26, color: color.fg },
   wrap: { gap: space(2.5) },
   note: { flexDirection: 'row', alignItems: 'center', gap: space(2), minHeight: 44, paddingHorizontal: space(3), borderRadius: radius.md, backgroundColor: color.surface2 },
   noteText: { flex: 1, fontFamily: font.medium, fontSize: 14, color: color.muted },

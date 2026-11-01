@@ -1,17 +1,19 @@
 'use client'
 
-import { CalendarDays, Download, Repeat, UserPlus, Users, Wallet } from 'lucide-react'
+import { Banknote, CalendarDays, Download, Repeat, UserPlus, Users, Wallet } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { PageHeader } from '@/components/layout/page-header'
 import { ColumnChart, ChartCard, HBarChart } from '@/components/reports/bar-chart'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { DateFilter } from '@/components/ui/date-filter'
 import { EmptyState } from '@/components/ui/empty-state'
 import { KpiCard } from '@/components/ui/kpi-card'
 import { Select } from '@/components/ui/select'
+import { Table, Td, Th, Tr } from '@/components/ui/table'
 import { toast } from '@/components/ui/toast'
 import { toCsv } from '@/lib/csv'
+import { cashSummary } from '@swarapos/core/cash'
 import { DATE_PRESETS, dateFilterRange, initialDateFilter } from '@swarapos/core/date-range'
 import { jakartaDateKey } from '@swarapos/core/domain/order-number'
 import { STATUS_LABEL } from '@swarapos/core/domain/order-status'
@@ -36,6 +38,7 @@ export default function LaporanPage() {
 
   const range = useMemo(() => dateFilterRange(dates, now), [dates, now])
   const report = useMemo(() => (range ? buildReport({ orders, services }, { range, outletId, now }) : null), [orders, services, outletId, range, now])
+  const cash = useMemo(() => (range ? cashSummary(orders, { range, outletId }) : null), [orders, outletId, range])
   // Hari terakhir rentang = akhir eksklusif dikurangi 1 ms.
   const lastDay = range ? new Date(range.to - 1) : null
   const rangeLabel =
@@ -124,6 +127,53 @@ export default function LaporanPage() {
             <ChartCard title="Produktivitas tahap" description="Jumlah order yang masuk ke tiap tahap pada rentang ini" data={report.byStage} format={(n) => `${n} order`}>
               <HBarChart data={report.byStage} format={(n) => `${n}`} />
             </ChartCard>
+            {cash && (
+              <Card>
+                <CardHeader
+                  title={
+                    <span className="flex items-center gap-2">
+                      <Banknote className="size-5 text-phase-done" aria-hidden />
+                      Kas masuk
+                    </span>
+                  }
+                  description="Pembayaran yang dicatat pada rentang ini, untuk dicocokkan dengan laci kas, rekening, dan QRIS."
+                  action={<span className="tabular text-lg font-bold text-fg">{formatRupiah(cash.total)}</span>}
+                />
+                <CardBody className="space-y-5">
+                  <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    {cash.byMethod.map((m) => (
+                      <div key={m.method} className="rounded-xl bg-surface-2 p-3">
+                        <dt className="text-xs text-fg-subtle">{m.label}</dt>
+                        <dd className="tabular mt-0.5 font-semibold text-fg">{formatRupiah(m.total)}</dd>
+                        <dd className="text-xs text-fg-subtle">{m.count} transaksi</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {cash.byActor.length === 0 ? (
+                    <p className="text-sm text-fg-subtle">Belum ada pembayaran pada rentang ini.</p>
+                  ) : (
+                    <Table>
+                      <thead>
+                        <tr>
+                          <Th>Dicatat oleh</Th>
+                          <Th className="text-right">Transaksi</Th>
+                          <Th className="text-right">Total</Th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cash.byActor.map((a) => (
+                          <Tr key={a.id}>
+                            <Td className="font-medium text-fg">{a.name}</Td>
+                            <Td className="tabular text-right">{a.count}</Td>
+                            <Td className="tabular text-right font-semibold">{formatRupiah(a.total)}</Td>
+                          </Tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  )}
+                </CardBody>
+              </Card>
+            )}
           </div>
         </>
       )}

@@ -4,9 +4,10 @@ import { formatDateTime, formatRupiah } from '@swarapos/core/format'
 import { CHANNEL_LABEL, DELIVERY_STATUS, formatDueIn, formatLineDetail, HANDBACK_LABEL, INTAKE_LABEL } from '@swarapos/core/labels'
 import { can } from '@swarapos/core/permissions'
 import { isLate } from '@swarapos/core/selectors'
+import { canAdjustItems } from '@swarapos/core/store/actions-order'
 import type { DeliveryTask } from '@swarapos/core/types'
 import { Redirect, useLocalSearchParams } from 'expo-router'
-import { Bike, CalendarClock, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react-native'
+import { Bike, CalendarClock, Pencil, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { CourierPickerSheet } from '@/components/CourierPickerSheet'
@@ -15,6 +16,7 @@ import { OrderTimeline } from '@/components/OrderTimeline'
 import { PaymentPanel } from '@/components/PaymentSheet'
 import { QcChecklist } from '@/components/QcChecklist'
 import { ReceiptSheet } from '@/components/ReceiptSheet'
+import { AdjustItemsSheet } from '@/components/AdjustItemsSheet'
 import { StatusActions } from '@/components/StatusActions'
 import { StatusBadge } from '@/components/StatusBadge'
 import { TASK_TYPE_LABEL } from '@/components/TaskCard'
@@ -44,6 +46,7 @@ export function OrderDetailScreen() {
   const tasks = useMemo(() => allTasks.filter((t) => t.orderId === id), [allTasks, id])
   const [assigning, setAssigning] = useState<DeliveryTask | null>(null)
   const [receiptOpen, setReceiptOpen] = useState(false)
+  const [adjusting, setAdjusting] = useState(false)
   // Order baru dari kasir membuka label otomatis (?baru=1).
   const [labelOpen, setLabelOpen] = useState(!!baru)
 
@@ -93,7 +96,10 @@ export function OrderDetailScreen() {
         </View>
       )}
 
-      <SectionTitle title="Item & harga" />
+      <SectionTitle
+        title="Item & harga"
+        action={canAdjustItems(order.status) && can(role, 'order.adjust') ? <Button title="Koreksi" icon={Pencil} variant="ghost" onPress={() => setAdjusting(true)} /> : undefined}
+      />
       <Card style={{ gap: space(3) }}>
         {order.items.map((item) => (
           <View key={item.id} style={styles.item}>
@@ -170,6 +176,7 @@ export function OrderDetailScreen() {
       </Card>
 
       <CourierPickerSheet task={assigning} title={order.orderNo} onClose={() => setAssigning(null)} />
+      {adjusting && <AdjustItemsSheet order={order} actor={actor} onClose={() => setAdjusting(false)} />}
       {receiptOpen && <ReceiptSheet visible onClose={() => setReceiptOpen(false)} order={order} outlet={outlet} customer={customer} />}
       <LabelSheet visible={labelOpen} onClose={() => setLabelOpen(false)} order={order} outlet={outlet} customer={customer} justCreated={!!baru} />
     </Screen>

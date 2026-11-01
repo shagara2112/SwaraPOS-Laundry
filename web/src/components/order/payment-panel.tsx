@@ -16,7 +16,7 @@ import { act } from '@/lib/store/act'
 import { recordPayment } from '@swarapos/core/store/actions-order'
 import type { Order, OrderPaymentMethod } from '@swarapos/core/types'
 
-function RecordPaymentDialog({ order, open, onClose }: { order: Order; open: boolean; onClose: () => void }) {
+export function RecordPaymentDialog({ order, open, onClose }: { order: Order; open: boolean; onClose: () => void }) {
   const [method, setMethod] = useState<OrderPaymentMethod>('CASH')
   const [amount, setAmount] = useState(String(amountDue(order)))
   const parsed = parseRupiahID(amount)

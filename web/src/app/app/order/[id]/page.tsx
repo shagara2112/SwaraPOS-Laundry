@@ -1,9 +1,10 @@
 'use client'
 
-import { ArrowLeft, CalendarClock, MapPin, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react'
+import { ArrowLeft, CalendarClock, MapPin, Pencil, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { AdjustItemsDialog } from '@/components/order/adjust-items-dialog'
 import { OrderItemsTable } from '@/components/order/order-items-table'
 import { OrderLabel } from '@/components/order/order-label'
 import { OrderTimeline } from '@/components/order/order-timeline'
@@ -22,6 +23,7 @@ import { isTerminal } from '@swarapos/core/domain/order-status'
 import { formatDateTime } from '@swarapos/core/format'
 import { CHANNEL_LABEL, formatDueIn, HANDBACK_LABEL, INTAKE_LABEL } from '@swarapos/core/labels'
 import { isLate } from '@swarapos/core/selectors'
+import { canAdjustItems } from '@swarapos/core/store/actions-order'
 import { useDemo } from '@/lib/store/demo-store'
 import { useNow } from '@/lib/use-now'
 
@@ -33,6 +35,7 @@ export default function OrderDetailPage() {
   const outlet = useDemo((s) => s.outlets.find((o) => o.id === order?.outletId))
   const [labelOpen, setLabelOpen] = useState(false)
   const [receiptOpen, setReceiptOpen] = useState(false)
+  const [adjusting, setAdjusting] = useState(false)
   const [justCreated, setJustCreated] = useState(false)
 
   // Order baru dari kasir membuka label otomatis (?baru=1).
@@ -113,7 +116,17 @@ export default function OrderDetailPage() {
           {order.status === 'QUALITY_CHECK' && <QcPanel key={order.version} order={order} />}
 
           <Card>
-            <CardHeader title="Item & harga" />
+            <CardHeader
+              title="Item & harga"
+              action={
+                canAdjustItems(order.status) && (
+                  <Button variant="secondary" size="sm" onClick={() => setAdjusting(true)}>
+                    <Pencil aria-hidden />
+                    Koreksi item
+                  </Button>
+                )
+              }
+            />
             <CardBody className="pt-2">
               <OrderItemsTable order={order} />
             </CardBody>
@@ -171,6 +184,7 @@ export default function OrderDetailPage() {
         </aside>
       </div>
 
+      {adjusting && <AdjustItemsDialog order={order} onClose={() => setAdjusting(false)} />}
       {receiptOpen && <ReceiptDialog open onClose={() => setReceiptOpen(false)} order={order} outlet={outlet} customer={customer} />}
 
       <Dialog

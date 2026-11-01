@@ -1,20 +1,24 @@
 import { ROLE_LABEL } from '@swarapos/core/labels'
 import Constants from 'expo-constants'
 import { router } from 'expo-router'
+import { cashSummary } from '@swarapos/core/cash'
+import { presetRange } from '@swarapos/core/date-range'
+import { formatRupiah } from '@swarapos/core/format'
 import { setReceiptPaper } from '@swarapos/core/store/actions-catalog'
 import type { ReceiptPaper } from '@swarapos/core/types'
-import { ExternalLink, LogOut, Receipt, RotateCcw, Store, UserRound } from 'lucide-react-native'
-import { useState } from 'react'
+import { Banknote, ExternalLink, LogOut, Receipt, RotateCcw, Store, UserRound } from 'lucide-react-native'
+import { useMemo, useState } from 'react'
 import { Linking, StyleSheet, Text, View } from 'react-native'
 import { WEB_DASHBOARD_URL } from '@/lib/config'
 import { useDemo } from '@/store/demo-store'
+import { useNow } from '@/lib/use-now'
 import { act } from '@/store/act'
 import { useActiveOutlet, useActor, useCurrentStaff } from '@/store/hooks'
 import { useSession } from '@/store/session-store'
 import { color, font, radius, space } from '@/theme'
 import { Button } from '@/ui/Button'
 import { Card } from '@/ui/Card'
-import { Segmented } from '@/ui/misc'
+import { Row, Segmented } from '@/ui/misc'
 import { Screen } from '@/ui/Screen'
 import { Sheet } from '@/ui/Sheet'
 import { toast } from '@/ui/Toast'
@@ -25,6 +29,13 @@ export function AccountScreen() {
   const outlet = useActiveOutlet()
   const staff = useCurrentStaff()
   const actor = useActor()
+  const orders = useDemo((s) => s.orders)
+  const now = useNow()
+  // Pembayaran yang dicatat kasir ini hari ini (WIB), untuk dicocokkan dengan laci saat tutup kasir.
+  const myCash = useMemo(
+    () => (role === 'CASHIER' ? cashSummary(orders, { range: presetRange('today', now)!, outletId: outlet.id, actorId: actor.id }) : null),
+    [role, orders, now, outlet.id, actor.id],
+  )
   const [confirmReset, setConfirmReset] = useState(false)
 
   return (
@@ -46,6 +57,20 @@ export function AccountScreen() {
           <Text style={styles.meta}>{outlet.address}</Text>
         </View>
       </Card>
+
+      {myCash && (
+        <Card style={styles.web}>
+          <View style={styles.paperHead}>
+            <Banknote size={18} color={color.primary} />
+            <Text style={[styles.outletName, { flex: 1 }]}>Kas saya hari ini</Text>
+            <Text style={styles.outletName}>{formatRupiah(myCash.total)}</Text>
+          </View>
+          <Text style={styles.meta}>{myCash.count} pembayaran yang Anda catat. Cocokkan tunai dengan laci saat tutup kasir.</Text>
+          {myCash.byMethod.map((m) => (
+            <Row key={m.method} label={m.label} value={formatRupiah(m.total)} />
+          ))}
+        </Card>
+      )}
 
       {role === 'OWNER' && (
         <Card style={styles.web}>

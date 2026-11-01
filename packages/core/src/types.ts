@@ -122,6 +122,8 @@ export interface StatusEvent {
   actor: Actor
   at: string
   note?: string
+  /** Judul catatan tanpa perubahan status (mis. "Koreksi item"); bawaan "Catatan QC". */
+  label?: string
 }
 
 export interface OrderPayment {

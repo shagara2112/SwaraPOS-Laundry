@@ -1,7 +1,8 @@
+import { cashSummary } from '@swarapos/core/cash'
 import { DATE_PRESETS } from '@swarapos/core/date-range'
 import { formatRupiah } from '@swarapos/core/format'
 import { buildReport, type Datum } from '@swarapos/core/report'
-import { ExternalLink, HandCoins, Receipt, Users, Wallet } from 'lucide-react-native'
+import { Banknote, ExternalLink, HandCoins, Receipt, Users, Wallet } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { Linking, StyleSheet, Text, View } from 'react-native'
 import { DateFilter, dateFilterRange, initialDateFilter } from '@/components/DateFilter'
@@ -12,7 +13,7 @@ import { useActiveOutlet } from '@/store/hooks'
 import { color, font, radius, space, tone } from '@/theme'
 import { Button } from '@/ui/Button'
 import { Card, SectionTitle } from '@/ui/Card'
-import { KpiTile } from '@/ui/misc'
+import { KpiTile, Row } from '@/ui/misc'
 import { Screen } from '@/ui/Screen'
 import { toast } from '@/ui/Toast'
 
@@ -53,6 +54,10 @@ export function ReportScreen() {
     const range = dateFilterRange(dates, now)
     return range ? buildReport({ orders, services }, { range, outletId: outlet.id, now }) : null
   }, [orders, services, dates, outlet.id, now])
+  const cash = useMemo(() => {
+    const range = dateFilterRange(dates, now)
+    return range ? cashSummary(orders, { range, outletId: outlet.id }) : null
+  }, [orders, dates, outlet.id, now])
 
   return (
     <Screen title="Laporan" subtitle={`${outlet.name.replace('Laundry Bersih Kilat ', 'Outlet ')} · nilai order tanpa yang batal`}>
@@ -88,6 +93,26 @@ export function ReportScreen() {
           <Card>
             <Bars data={report.byStage} format={(n) => `${n}`} empty="Belum ada pergerakan produksi." />
           </Card>
+
+          {cash && (
+            <>
+              <SectionTitle title="Kas masuk" />
+              <Card style={{ gap: space(2) }}>
+                <View style={styles.cashHead}>
+                  <Banknote size={18} color={tone.done.fg} />
+                  <Text style={styles.cashTotal}>{formatRupiah(cash.total)}</Text>
+                  <Text style={styles.muted}>{cash.count} transaksi</Text>
+                </View>
+                {cash.byMethod.map((m) => (
+                  <Row key={m.method} label={`${m.label} · ${m.count}`} value={formatRupiah(m.total)} />
+                ))}
+                {cash.byActor.length > 0 && <Text style={[styles.muted, { marginTop: space(2) }]}>Dicatat oleh</Text>}
+                {cash.byActor.map((a) => (
+                  <Row key={a.id} label={`${a.name} · ${a.count}`} value={formatRupiah(a.total)} />
+                ))}
+              </Card>
+            </>
+          )}
         </>
       )}
 
@@ -113,4 +138,6 @@ const styles = StyleSheet.create({
   barValue: { minWidth: 48, textAlign: 'right', fontFamily: font.semibold, fontSize: 13, color: color.fg },
   empty: { paddingVertical: space(3), textAlign: 'center', fontFamily: font.regular, fontSize: 14, color: color.subtle },
   muted: { fontFamily: font.regular, fontSize: 13, color: color.muted },
+  cashHead: { flexDirection: 'row', alignItems: 'center', gap: space(2), marginBottom: space(1) },
+  cashTotal: { flex: 1, fontFamily: font.extrabold, fontSize: 20, color: color.fg },
 })
