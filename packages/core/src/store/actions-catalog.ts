@@ -1,7 +1,7 @@
 import { normalizePhoneID } from '../domain/whatsapp'
 import { formatRupiah } from '../format'
 import { newId } from '../ids'
-import type { Actor, Customer, DeliveryTask, DeliveryTaskStatus, DeliveryZone, LatLng, Service } from '../types'
+import type { Actor, Customer, DeliveryTask, DeliveryTaskStatus, DeliveryZone, LatLng, Outlet, ReceiptPaper, Service } from '../types'
 import { transitionOrder } from './actions-order'
 import { appendAudit, fail, type ActionResult, type DemoState, type OutletPaymentMethod } from './state'
 
@@ -237,4 +237,13 @@ export function upsertOutletPaymentMethod(
       detail,
     ),
   }
+}
+
+/** Atur lebar kertas printer nota untuk satu outlet. */
+export function setReceiptPaper(s: DemoState, outletId: string, paper: ReceiptPaper, actor: Actor, now: Date): ActionResult<Outlet> {
+  const current = s.outlets.find((o) => o.id === outletId)
+  if (!current) return fail('NOT_FOUND')
+  const updated: Outlet = { ...current, receiptPaper: paper }
+  const state = { ...s, outlets: s.outlets.map((o) => (o.id === outletId ? updated : o)) }
+  return { ok: true, value: updated, state: audited(state, actor, now, 'outlet.receipt_paper', 'outlet', outletId, `${paper} mm`) }
 }

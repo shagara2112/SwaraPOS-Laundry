@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, CalendarClock, MapPin, Phone, QrCode, SearchX, Store, Zap } from 'lucide-react'
+import { ArrowLeft, CalendarClock, MapPin, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -9,6 +9,7 @@ import { OrderLabel } from '@/components/order/order-label'
 import { OrderTimeline } from '@/components/order/order-timeline'
 import { PaymentPanel } from '@/components/order/payment-panel'
 import { QcPanel } from '@/components/order/qc-panel'
+import { ReceiptDialog } from '@/components/order/receipt-dialog'
 import { StatusActions } from '@/components/order/status-actions'
 import { StatusBadge } from '@/components/order/status-badge'
 import { WhatsAppPanel } from '@/components/order/whatsapp-panel'
@@ -31,6 +32,7 @@ export default function OrderDetailPage() {
   const customer = useDemo((s) => s.customers.find((c) => c.id === order?.customerId))
   const outlet = useDemo((s) => s.outlets.find((o) => o.id === order?.outletId))
   const [labelOpen, setLabelOpen] = useState(false)
+  const [receiptOpen, setReceiptOpen] = useState(false)
   const [justCreated, setJustCreated] = useState(false)
 
   // Order baru dari kasir membuka label otomatis (?baru=1).
@@ -147,10 +149,14 @@ export default function OrderDetailPage() {
           <PaymentPanel order={order} />
           <WhatsAppPanel order={order} customer={customer} outlet={outlet} />
           <Card>
-            <CardHeader title="Label & lacak" />
+            <CardHeader title="Nota, label & lacak" />
             <CardBody className="space-y-3 pt-3">
-              <p className="text-sm text-fg-muted">QR di label membuka halaman lacak pelanggan untuk order ini.</p>
+              <p className="text-sm text-fg-muted">Nota untuk pelanggan; QR di nota dan label membuka halaman lacak order ini.</p>
               <div className="flex flex-wrap gap-2">
+                <Button onClick={() => setReceiptOpen(true)}>
+                  <Receipt aria-hidden />
+                  Cetak nota
+                </Button>
                 <Button variant="secondary" onClick={() => setLabelOpen(true)}>
                   <QrCode aria-hidden />
                   Lihat label
@@ -164,6 +170,8 @@ export default function OrderDetailPage() {
           </Card>
         </aside>
       </div>
+
+      {receiptOpen && <ReceiptDialog open onClose={() => setReceiptOpen(false)} order={order} outlet={outlet} customer={customer} />}
 
       <Dialog
         open={labelOpen}

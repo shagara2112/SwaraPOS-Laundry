@@ -6,7 +6,7 @@ import { can } from '@swarapos/core/permissions'
 import { isLate } from '@swarapos/core/selectors'
 import type { DeliveryTask } from '@swarapos/core/types'
 import { Redirect, useLocalSearchParams } from 'expo-router'
-import { Bike, CalendarClock, Phone, QrCode, SearchX, Store, Zap } from 'lucide-react-native'
+import { Bike, CalendarClock, Phone, QrCode, Receipt, SearchX, Store, Zap } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { CourierPickerSheet } from '@/components/CourierPickerSheet'
@@ -14,6 +14,7 @@ import { LabelSheet } from '@/components/LabelSheet'
 import { OrderTimeline } from '@/components/OrderTimeline'
 import { PaymentPanel } from '@/components/PaymentSheet'
 import { QcChecklist } from '@/components/QcChecklist'
+import { ReceiptSheet } from '@/components/ReceiptSheet'
 import { StatusActions } from '@/components/StatusActions'
 import { StatusBadge } from '@/components/StatusBadge'
 import { TASK_TYPE_LABEL } from '@/components/TaskCard'
@@ -42,6 +43,7 @@ export function OrderDetailScreen() {
   const staff = useDemo((s) => s.staff)
   const tasks = useMemo(() => allTasks.filter((t) => t.orderId === id), [allTasks, id])
   const [assigning, setAssigning] = useState<DeliveryTask | null>(null)
+  const [receiptOpen, setReceiptOpen] = useState(false)
   // Order baru dari kasir membuka label otomatis (?baru=1).
   const [labelOpen, setLabelOpen] = useState(!!baru)
 
@@ -158,6 +160,7 @@ export function OrderDetailScreen() {
       <View style={{ gap: space(3) }}>
         <PaymentPanel order={order} actor={actor} canRecord={can(role, 'order.payment')} />
         {can(role, 'order.whatsapp') && <WhatsAppPanel order={order} customer={customer} outlet={outlet} actor={actor} />}
+        {can(role, 'order.payment') && <Button title="Nota" icon={Receipt} variant="secondary" onPress={() => setReceiptOpen(true)} />}
         <Button title="Lihat label & QR lacak" icon={QrCode} variant="secondary" onPress={() => setLabelOpen(true)} />
       </View>
 
@@ -167,6 +170,7 @@ export function OrderDetailScreen() {
       </Card>
 
       <CourierPickerSheet task={assigning} title={order.orderNo} onClose={() => setAssigning(null)} />
+      {receiptOpen && <ReceiptSheet visible onClose={() => setReceiptOpen(false)} order={order} outlet={outlet} customer={customer} />}
       <LabelSheet visible={labelOpen} onClose={() => setLabelOpen(false)} order={order} outlet={outlet} customer={customer} justCreated={!!baru} />
     </Screen>
   )

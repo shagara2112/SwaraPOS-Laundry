@@ -70,7 +70,11 @@ export interface Outlet extends LatLng {
   address: string
   phone: string
   hours: string
+  /** Lebar kertas printer nota; bawaan 58 mm. */
+  receiptPaper?: ReceiptPaper
 }
+
+export type ReceiptPaper = 58 | 80
 
 export interface Customer {
   id: string

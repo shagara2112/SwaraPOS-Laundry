@@ -5,6 +5,7 @@ import {
   addCustomer,
   assignCourier,
   deleteCustomer,
+  setReceiptPaper,
   setServiceActive,
   updateCustomer,
   updateDeliveryTask,
@@ -90,6 +91,21 @@ describe('deleteCustomer', () => {
 
   it('pelanggan tidak ada ditolak', () => {
     expect(deleteCustomer(s0, 'cus-tidak-ada', actor, now)).toEqual({ ok: false, error: 'NOT_FOUND' })
+  })
+})
+
+describe('setReceiptPaper', () => {
+  it('mengatur ukuran kertas nota per outlet dan mencatat audit', () => {
+    const outlet = s0.outlets[0]
+    const { state, value } = ok(setReceiptPaper(s0, outlet.id, 80, actor, now))
+    expect(value.receiptPaper).toBe(80)
+    expect(state.outlets.find((o) => o.id === outlet.id)?.receiptPaper).toBe(80)
+    expect(state.outlets.find((o) => o.id !== outlet.id)?.receiptPaper).toBeUndefined()
+    expect(state.platform.audit.at(-1)).toMatchObject({ action: 'outlet.receipt_paper', entityId: outlet.id })
+  })
+
+  it('outlet tidak ada ditolak', () => {
+    expect(setReceiptPaper(s0, 'o-tidak-ada', 58, actor, now)).toEqual({ ok: false, error: 'NOT_FOUND' })
   })
 })
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, MapPin, Phone, Save, UserPlus } from 'lucide-react'
+import { Clock, MapPin, Phone, Receipt, Save, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { PageHeader } from '@/components/layout/page-header'
 import { PaymentMethodsTab } from '@/components/settings/payment-methods-tab'
@@ -14,11 +14,12 @@ import { Select } from '@/components/ui/select'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
 import { Tabs } from '@/components/ui/tabs'
 import { toast } from '@/components/ui/toast'
+import { cn } from '@/lib/cn'
 import { buildWaMessage, WA_EVENT_LABEL } from '@swarapos/core/domain/whatsapp'
 import { ROLE_LABEL } from '@swarapos/core/labels'
 import { planUsage } from '@swarapos/core/selectors'
 import { act } from '@/lib/store/act'
-import { updateZones } from '@swarapos/core/store/actions-catalog'
+import { setReceiptPaper, updateZones } from '@swarapos/core/store/actions-catalog'
 import { useDemo } from '@/lib/store/demo-store'
 import type { DeliveryZone, StaffRole, WaEvent } from '@swarapos/core/types'
 
@@ -46,6 +47,32 @@ function OutletTab() {
             <p className="font-mono text-xs text-fg-subtle">
               Titik: {o.lat}, {o.lng}
             </p>
+            <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+              <span className="flex items-center gap-2 text-fg">
+                <Receipt className="size-4 shrink-0" aria-hidden />
+                Kertas nota
+              </span>
+              <div className="ml-auto flex gap-1.5" role="radiogroup" aria-label={`Kertas nota ${o.name}`}>
+                {([58, 80] as const).map((paper) => {
+                  const active = (o.receiptPaper ?? 58) === paper
+                  return (
+                    <button
+                      key={paper}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => act((s) => setReceiptPaper(s, o.id, paper, s.tenantActor, new Date()), `Kertas nota ${o.code}: ${paper} mm`)}
+                      className={cn(
+                        'h-9 rounded-lg border px-3 text-sm font-medium transition-colors pointer-coarse:h-11',
+                        active ? 'border-primary bg-primary-soft text-primary' : 'border-border text-fg-muted hover:text-fg',
+                      )}
+                    >
+                      {paper} mm
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </CardBody>
         </Card>
       ))}

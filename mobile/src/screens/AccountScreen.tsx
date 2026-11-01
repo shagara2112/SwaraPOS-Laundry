@@ -1,16 +1,20 @@
 import { ROLE_LABEL } from '@swarapos/core/labels'
 import Constants from 'expo-constants'
 import { router } from 'expo-router'
-import { ExternalLink, LogOut, RotateCcw, Store, UserRound } from 'lucide-react-native'
+import { setReceiptPaper } from '@swarapos/core/store/actions-catalog'
+import type { ReceiptPaper } from '@swarapos/core/types'
+import { ExternalLink, LogOut, Receipt, RotateCcw, Store, UserRound } from 'lucide-react-native'
 import { useState } from 'react'
 import { Linking, StyleSheet, Text, View } from 'react-native'
 import { WEB_DASHBOARD_URL } from '@/lib/config'
 import { useDemo } from '@/store/demo-store'
-import { useActiveOutlet, useCurrentStaff } from '@/store/hooks'
+import { act } from '@/store/act'
+import { useActiveOutlet, useActor, useCurrentStaff } from '@/store/hooks'
 import { useSession } from '@/store/session-store'
 import { color, font, radius, space } from '@/theme'
 import { Button } from '@/ui/Button'
 import { Card } from '@/ui/Card'
+import { Segmented } from '@/ui/misc'
 import { Screen } from '@/ui/Screen'
 import { Sheet } from '@/ui/Sheet'
 import { toast } from '@/ui/Toast'
@@ -20,6 +24,7 @@ export function AccountScreen() {
   const signOut = useSession((s) => s.signOut)
   const outlet = useActiveOutlet()
   const staff = useCurrentStaff()
+  const actor = useActor()
   const [confirmReset, setConfirmReset] = useState(false)
 
   return (
@@ -41,6 +46,27 @@ export function AccountScreen() {
           <Text style={styles.meta}>{outlet.address}</Text>
         </View>
       </Card>
+
+      {role === 'OWNER' && (
+        <Card style={styles.web}>
+          <View style={styles.paperHead}>
+            <Receipt size={18} color={color.primary} />
+            <Text style={styles.outletName}>Kertas nota</Text>
+          </View>
+          <Text style={styles.meta}>Lebar printer thermal untuk nota outlet ini.</Text>
+          <Segmented
+            items={[
+              { id: '58', label: '58 mm' },
+              { id: '80', label: '80 mm' },
+            ]}
+            value={String(outlet.receiptPaper ?? 58)}
+            onChange={(id) => {
+              const paper = Number(id) as ReceiptPaper
+              act((s) => setReceiptPaper(s, outlet.id, paper, actor, new Date()), `Kertas nota: ${paper} mm`)
+            }}
+          />
+        </Card>
+      )}
 
       {role === 'OWNER' && (
         <Card style={styles.web}>
@@ -99,6 +125,7 @@ const styles = StyleSheet.create({
   meta: { marginTop: 2, fontFamily: font.regular, fontSize: 13, color: color.muted },
   outlet: { flexDirection: 'row', alignItems: 'flex-start', gap: space(3), marginTop: space(3) },
   web: { gap: space(2), marginTop: space(3) },
+  paperHead: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
   outletName: { fontFamily: font.semibold, fontSize: 15, color: color.fg },
   actions: { marginTop: space(6), gap: space(2) },
   version: { marginTop: space(8), textAlign: 'center', fontFamily: font.regular, fontSize: 12, color: color.subtle },
